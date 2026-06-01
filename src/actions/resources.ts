@@ -138,7 +138,7 @@ export async function getApprovedResources(filters: ResourceFilters = {}) {
     orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }]
   });
 
-  return resources.map(mapResource);
+  return resources.map((resource) => mapResource(resource, { includeContact: false }));
 }
 
 export async function getResourceDetail(id: string) {
@@ -166,10 +166,12 @@ export async function getResourceDetail(id: string) {
       })
     : null;
 
+  const contactUnlocked = Boolean(isOwner || isAdmin || matchRequest?.status === "CONTACT_UNLOCKED");
+
   return {
-    resource: mapResource(resource),
+    resource: mapResource(resource, { includeContact: contactUnlocked }),
     matchRequest: matchRequest ? mapMatchRequest(matchRequest) : null,
-    contactUnlocked: Boolean(isOwner || isAdmin || matchRequest?.status === "CONTACT_UNLOCKED"),
+    contactUnlocked,
     isAuthenticated: Boolean(user)
   };
 }
@@ -181,7 +183,7 @@ export async function getMyResources() {
     include: { user: { select: { id: true, name: true, email: true, companyName: true } } },
     orderBy: { createdAt: "desc" }
   });
-  return resources.map(mapResource);
+  return resources.map((resource) => mapResource(resource, { includeContact: true }));
 }
 
 export async function updateMyResource(id: string, input: ResourceInput): Promise<ActionResult<{ id: string }>> {
@@ -212,7 +214,8 @@ export async function updateMyResource(id: string, input: ResourceInput): Promis
         contactWhatsapp: normalizeOptional(input.contactWhatsapp),
         contactWechat: normalizeOptional(input.contactWechat),
         status: ResourceStatus.PENDING,
-        isFeatured: false
+        isFeatured: false,
+        adminNote: null
       },
       select: { id: true }
     });
@@ -237,7 +240,8 @@ export async function adminReviewResource(
       where: { id },
       data: {
         status: statusMap[status],
-        isFeatured: status === "featured"
+        isFeatured: status === "featured",
+        adminNote: note?.trim() || null
       },
       select: { id: true }
     });

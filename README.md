@@ -59,6 +59,15 @@ npm run db:seed
 npm run dev
 ```
 
+pnpm 方式：
+
+```bash
+pnpm install
+pnpm prisma migrate dev
+pnpm prisma db seed
+pnpm dev
+```
+
 默认地址：
 
 ```bash
@@ -81,9 +90,10 @@ DATABASE_URL="postgresql://nijie@localhost:5432/uzchina_connect?schema=public"
 
 ## Seed 账号
 
-- 管理员：`admin@uzchina-connect.com` / `admin123456`
+- 管理员：`admin@uzchina-connect.com` / `Admin123456`
 - 演示用户：`demo@uzchina-connect.com` / `demo123456`
 - 资源方：`partner@uzchina-connect.com` / `partner123456`
+- 服务商：`service@uzchina-connect.com` / `service123456`
 
 ## i18n
 

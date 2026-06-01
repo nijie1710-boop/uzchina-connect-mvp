@@ -1,31 +1,32 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Check, FileClock, FileText, Handshake, ShieldAlert, Users, X } from "lucide-react";
+import { Check, FileClock, FileText, Handshake, LayoutDashboard, ShieldAlert, ShieldCheck, Star, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import {
   localizedCategory,
-  matchStatusLabel,
   readText,
   resourceLocation,
   resourceTitle,
-  statusLabel,
+  type AdminUserRecord,
   type AuditLogRecord,
   type DemandRecord,
   type LicenseApplicationRecord,
   type MatchRequestRecord,
   type ResourceRecord,
-  type SubmissionStatus
+  type VerificationRecord
 } from "@/lib/domain";
 import { StatusBadge } from "@/components/status-badge";
 import { useToast } from "@/components/toast-provider";
+import { adminUpdateUserVerifyStatus } from "@/actions/admin";
 import { adminReviewDemand } from "@/actions/demands";
 import { adminReviewLicenseApplication } from "@/actions/licenses";
 import { adminReviewMatchRequest } from "@/actions/matches";
 import { adminReviewResource } from "@/actions/resources";
+import { adminReviewVerification } from "@/actions/verifications";
 
-type AdminTab = "resources" | "demands" | "matches" | "licenses" | "audit";
+type AdminTab = "overview" | "resources" | "demands" | "matches" | "licenses" | "verifications" | "users" | "audit";
 type AdminMatchRequest = MatchRequestRecord & { resource: ResourceRecord };
 type AdminStats = {
   pendingResources: number;
@@ -33,6 +34,8 @@ type AdminStats = {
   pendingDemands: number;
   pendingMatches: number;
   pendingLicenses: number;
+  pendingVerifications: number;
+  users: number;
   auditLogs: number;
 };
 type AdminPayload = {
@@ -41,20 +44,25 @@ type AdminPayload = {
   demands: DemandRecord[];
   matches: AdminMatchRequest[];
   licenses: LicenseApplicationRecord[];
+  verifications: VerificationRecord[];
+  users: AdminUserRecord[];
   logs: AuditLogRecord[];
 };
 
 export default function AdminPage() {
-  const { t, tArray } = useI18n();
+  const { t } = useI18n();
   const router = useRouter();
   const { showToast } = useToast();
-  const [tab, setTab] = useState<AdminTab>("resources");
+  const [tab, setTab] = useState<AdminTab>("overview");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [pendingResources, setPendingResources] = useState<ResourceRecord[]>([]);
   const [pendingDemands, setPendingDemands] = useState<DemandRecord[]>([]);
   const [pendingMatches, setPendingMatches] = useState<AdminMatchRequest[]>([]);
   const [pendingLicenses, setPendingLicenses] = useState<LicenseApplicationRecord[]>([]);
+  const [pendingVerifications, setPendingVerifications] = useState<VerificationRecord[]>([]);
+  const [users, setUsers] = useState<AdminUserRecord[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   const loadAdmin = useCallback(async () => {
     try {
@@ -69,6 +77,8 @@ export default function AdminPage() {
       setPendingDemands(payload.demands);
       setPendingMatches(payload.matches);
       setPendingLicenses(payload.licenses);
+      setPendingVerifications(payload.verifications);
+      setUsers(payload.users);
       setAuditLogs(payload.logs);
     } catch {
       router.push("/login");
@@ -80,33 +90,29 @@ export default function AdminPage() {
     void loadAdmin();
   }, [loadAdmin]);
 
-  const reviewResource = async (id: string, status: "approved" | "rejected" | "needs_more_info" | "featured" | "high_risk" | "pending") => {
-    const result = await adminReviewResource(id, status, t("admin.contactHidden"));
-    showToast(result.ok ? t("toast.resourceApproved") : result.error);
-    await loadAdmin();
-  };
+  const noteFor = (id: string) => notes[id]?.trim() || "";
+  const setNote = (id: string, value: string) => setNotes((current) => ({ ...current, [id]: value }));
 
-  const reviewDemand = async (id: string, status: "approved" | "rejected" | "needs_more_info") => {
-    const result = await adminReviewDemand(id, status, t("admin.notePlaceholder"));
-    showToast(result.ok ? t("common.approved") : result.error);
-    await loadAdmin();
-  };
-
-  const reviewMatch = async (id: string, status: "contact_unlocked" | "rejected") => {
-    const result = await adminReviewMatchRequest(id, status, status === "contact_unlocked" ? t("detail.contactUnlocked") : t("common.reject"));
-    showToast(result.ok ? t("toast.matchUnlocked") : result.error);
-    await loadAdmin();
-  };
-
-  const reviewLicense = async (id: string, status: "approved" | "rejected" | "contacted" | "needs_more_info") => {
-    const result = await adminReviewLicenseApplication(id, status, t("forms.licenseTitle"));
-    showToast(result.ok ? t("toast.licenseApproved") : result.error);
+  const runReview = async (result: Promise<{ ok: boolean; error?: string }>, successText: string) => {
+    const resolved = await result;
+    showToast(resolved.ok ? successText : (resolved.error ?? "Failed"));
     await loadAdmin();
   };
 
   if (!stats) {
     return <div className="page-pad text-sm font-semibold text-slate-500">{t("admin.subtitle")}</div>;
   }
+
+  const tabs: Array<[AdminTab, string, typeof FileClock]> = [
+    ["overview", t("admin.overview"), LayoutDashboard],
+    ["resources", t("admin.resourceReview"), FileClock],
+    ["demands", t("admin.demandReview"), Users],
+    ["matches", t("admin.matchReview"), Handshake],
+    ["licenses", t("admin.licenseReview"), FileText],
+    ["verifications", t("admin.verificationReview"), ShieldCheck],
+    ["users", t("admin.userManagement"), Users],
+    ["audit", t("admin.auditLog"), ShieldAlert]
+  ];
 
   return (
     <div className="mobile-screen">
@@ -115,25 +121,16 @@ export default function AdminPage() {
           <h1 className="text-xl font-black">UzChina</h1>
           <p className="text-xs font-semibold tracking-[0.3em] text-white/50">CONNECT</p>
           <div className="mt-8 grid gap-2">
-            {[
-              ["resources", t("admin.resourceReview"), FileClock],
-              ["demands", t("forms.demandTitle"), Users],
-              ["matches", t("admin.matchReview"), Handshake],
-              ["licenses", t("admin.licenseReview"), FileText],
-              ["audit", t("admin.auditLog"), ShieldAlert]
-            ].map(([key, label, Icon]) => {
-              const TypedIcon = Icon as typeof FileClock;
-              return (
-                <button
-                  key={key as string}
-                  onClick={() => setTab(key as AdminTab)}
-                  className={tab === key ? "flex h-11 items-center gap-3 rounded-xl bg-white/[0.12] px-3 text-left text-sm font-black text-gold" : "flex h-11 items-center gap-3 rounded-xl px-3 text-left text-sm font-black text-white/70 hover:bg-white/[0.08]"}
-                >
-                  <TypedIcon className="h-4 w-4" />
-                  {label as string}
-                </button>
-              );
-            })}
+            {tabs.map(([key, label, Icon]) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={tab === key ? "flex h-11 items-center gap-3 rounded-xl bg-white/[0.12] px-3 text-left text-sm font-black text-gold" : "flex h-11 items-center gap-3 rounded-xl px-3 text-left text-sm font-black text-white/70 hover:bg-white/[0.08]"}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
           </div>
         </aside>
 
@@ -142,171 +139,181 @@ export default function AdminPage() {
             <h1 className="section-title">{t("admin.title")}</h1>
             <p className="section-subtitle">{t("admin.subtitle")}</p>
             <div className="mt-4 flex gap-2 overflow-x-auto">
-              {[
-                ["resources", t("admin.resourceReview")],
-                ["demands", t("forms.demandTitle")],
-                ["matches", t("admin.matchReview")],
-                ["licenses", t("admin.licenseReview")],
-                ["audit", t("admin.auditLog")]
-              ].map(([key, label]) => (
+              {tabs.map(([key, label]) => (
                 <button
-                  key={key as string}
-                  onClick={() => setTab(key as AdminTab)}
+                  key={key}
+                  onClick={() => setTab(key)}
                   className={tab === key ? "rounded-full bg-navy-700 px-4 py-2 text-xs font-black text-white" : "rounded-full border border-line bg-white px-4 py-2 text-xs font-black text-slate-600"}
                 >
-                  {label as string}
+                  {label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              [t("admin.pending"), stats.pendingResources],
-              [t("admin.approved"), stats.approvedResources],
-              [t("forms.demandTitle"), stats.pendingDemands],
-              [t("admin.matchReview"), stats.pendingMatches],
-              [t("admin.licenseReview"), stats.pendingLicenses]
-            ].map(([label, value]) => (
-              <div key={label as string} className="panel p-5">
-                <small className="text-xs font-bold text-slate-500">{label as string}</small>
-                <b className="mt-2 block text-3xl font-black">{value as number}</b>
+          <StatsGrid stats={stats} />
+
+          {tab === "overview" ? (
+            <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
+              <div className="panel overflow-hidden">
+                <SectionTitle title={t("admin.recentAudit")} />
+                {auditLogs.slice(0, 8).map((log) => (
+                  <AuditRow key={log.id} log={log} />
+                ))}
               </div>
-            ))}
-          </div>
+              <div className="panel p-5">
+                <h2 className="font-black">{t("admin.drawerTitle")}</h2>
+                <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-600">
+                  <p>{t("admin.resourceReview")}: {stats.pendingResources}</p>
+                  <p>{t("admin.demandReview")}: {stats.pendingDemands}</p>
+                  <p>{t("admin.matchReview")}: {stats.pendingMatches}</p>
+                  <p>{t("admin.licenseReview")}: {stats.pendingLicenses}</p>
+                  <p>{t("admin.verificationReview")}: {stats.pendingVerifications}</p>
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           {tab === "resources" ? (
-            <section className="panel mt-6 overflow-hidden">
-              <TableHead labels={tArray("admin.tableResource")} />
-              {pendingResources.length ? (
-                pendingResources.map((resource) => (
-                  <div key={resource.id} className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.6fr_1fr_1fr_1fr_170px] lg:items-center">
-                    <b>{resourceTitle(resource, t)}</b>
-                    <span className="text-slate-500">{resourceLocation(resource, t)}</span>
-                    <span>{localizedCategory(resource, t)}</span>
-                    <span>{readText(resource.ownerName, resource.ownerNameKey, t)}</span>
-                    <div className="flex gap-2">
-                      <button onClick={() => reviewResource(resource.id, "approved")} className="rounded-xl bg-emerald-50 p-2 text-emerald-700">
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => reviewResource(resource.id, "rejected")} className="rounded-xl bg-rose-50 p-2 text-rose-700">
-                        <X className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => reviewResource(resource.id, "needs_more_info")} className="rounded-xl bg-sky-50 px-3 text-xs font-black text-sky-700">
-                        {t("common.requestInfo")}
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyState />
-              )}
-            </section>
+            <ReviewPanel title={t("admin.resourceReview")} empty={!pendingResources.length}>
+              {pendingResources.map((resource) => (
+                <ReviewItem
+                  key={resource.id}
+                  title={resourceTitle(resource, t)}
+                  meta={`${resourceLocation(resource, t)} · ${localizedCategory(resource, t)} · ${readText(resource.ownerName, resource.ownerNameKey, t)}`}
+                  status={<StatusBadge status={resource.status} t={t} />}
+                  note={notes[resource.id] ?? ""}
+                  notePlaceholder={t("admin.notePlaceholder")}
+                  onNote={(value) => setNote(resource.id, value)}
+                  actions={
+                    <>
+                      <ActionButton label={t("common.approve")} tone="green" onClick={() => runReview(adminReviewResource(resource.id, "approved", noteFor(resource.id)), t("common.approved"))} />
+                      <ActionButton label={t("admin.markFeatured")} tone="gold" onClick={() => runReview(adminReviewResource(resource.id, "featured", noteFor(resource.id)), t("common.featured"))} icon={<Star className="h-3.5 w-3.5" />} />
+                      <ActionButton label={t("common.reject")} tone="red" onClick={() => runReview(adminReviewResource(resource.id, "rejected", noteFor(resource.id)), t("common.rejected"))} />
+                      <ActionButton label={t("common.requestInfo")} tone="blue" onClick={() => runReview(adminReviewResource(resource.id, "needs_more_info", noteFor(resource.id)), t("common.needsMoreInfo"))} />
+                      <ActionButton label={t("admin.markHighRisk")} tone="red" onClick={() => runReview(adminReviewResource(resource.id, "high_risk", noteFor(resource.id)), t("common.highRisk"))} />
+                    </>
+                  }
+                />
+              ))}
+            </ReviewPanel>
           ) : null}
 
           {tab === "demands" ? (
-            <section className="panel mt-6 overflow-hidden">
-              <TableHead labels={tArray("admin.tableResource")} />
-              {pendingDemands.length ? (
-                pendingDemands.map((demand) => (
-                  <div key={demand.id} className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.6fr_1fr_1fr_1fr_170px] lg:items-center">
-                    <b>{readText(demand.title, demand.titleKey, t)}</b>
-                    <span className="text-slate-500">{readText(demand.country, demand.countryKey, t)} · {readText(demand.city, demand.cityKey, t)}</span>
-                    <span>{localizedCategory(demand, t)}</span>
-                    <StatusBadge status={demand.status} t={t} />
-                    <div className="flex gap-2">
-                      <button onClick={() => reviewDemand(demand.id, "approved")} className="rounded-xl bg-emerald-50 p-2 text-emerald-700">
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => reviewDemand(demand.id, "rejected")} className="rounded-xl bg-rose-50 p-2 text-rose-700">
-                        <X className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => reviewDemand(demand.id, "needs_more_info")} className="rounded-xl bg-sky-50 px-3 text-xs font-black text-sky-700">
-                        {t("common.requestInfo")}
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyState />
-              )}
-            </section>
+            <ReviewPanel title={t("admin.demandReview")} empty={!pendingDemands.length}>
+              {pendingDemands.map((demand) => (
+                <ReviewItem
+                  key={demand.id}
+                  title={readText(demand.title, demand.titleKey, t)}
+                  meta={`${readText(demand.country, demand.countryKey, t)} · ${readText(demand.city, demand.cityKey, t)} · ${localizedCategory(demand, t)}`}
+                  status={<StatusBadge status={demand.status} t={t} />}
+                  note={notes[demand.id] ?? ""}
+                  notePlaceholder={t("admin.notePlaceholder")}
+                  onNote={(value) => setNote(demand.id, value)}
+                  actions={
+                    <>
+                      <ActionButton label={t("common.approve")} tone="green" onClick={() => runReview(adminReviewDemand(demand.id, "approved", noteFor(demand.id)), t("common.approved"))} />
+                      <ActionButton label={t("common.reject")} tone="red" onClick={() => runReview(adminReviewDemand(demand.id, "rejected", noteFor(demand.id)), t("common.rejected"))} />
+                      <ActionButton label={t("common.requestInfo")} tone="blue" onClick={() => runReview(adminReviewDemand(demand.id, "needs_more_info", noteFor(demand.id)), t("common.needsMoreInfo"))} />
+                    </>
+                  }
+                />
+              ))}
+            </ReviewPanel>
           ) : null}
 
           {tab === "matches" ? (
-            <section className="panel mt-6 overflow-hidden">
-              <TableHead labels={tArray("admin.tableMatch")} />
-              {pendingMatches.length ? (
-                pendingMatches.map((request) => (
-                  <div key={request.id} className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.5fr_1fr_1fr_1fr_190px] lg:items-center">
-                    <b>{resourceTitle(request.resource, t)}</b>
-                    <span>{readText(request.applicantName, request.applicantNameKey, t)}</span>
-                    <StatusBadge status={request.status} t={t} />
-                    <span className="text-slate-500">{request.intent}</span>
-                    <div className="flex gap-2">
-                      <button onClick={() => reviewMatch(request.id, "contact_unlocked")} className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
-                        {t("common.approveUnlock")}
-                      </button>
-                      <button onClick={() => reviewMatch(request.id, "rejected")} className="rounded-xl bg-rose-50 p-2 text-rose-700">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyState />
-              )}
-            </section>
+            <ReviewPanel title={t("admin.matchReview")} empty={!pendingMatches.length}>
+              {pendingMatches.map((request) => (
+                <ReviewItem
+                  key={request.id}
+                  title={resourceTitle(request.resource, t)}
+                  meta={`${readText(request.applicantName, request.applicantNameKey, t)} · ${request.intent}`}
+                  status={<StatusBadge status={request.status} t={t} />}
+                  note={notes[request.id] ?? ""}
+                  notePlaceholder={t("admin.notePlaceholder")}
+                  onNote={(value) => setNote(request.id, value)}
+                  actions={
+                    <>
+                      <ActionButton label={t("common.approve")} tone="green" onClick={() => runReview(adminReviewMatchRequest(request.id, "approved", noteFor(request.id)), t("common.approved"))} />
+                      <ActionButton label={t("admin.openContact")} tone="green" onClick={() => runReview(adminReviewMatchRequest(request.id, "contact_unlocked", noteFor(request.id)), t("detail.contactUnlocked"))} />
+                      <ActionButton label={t("common.reject")} tone="red" onClick={() => runReview(adminReviewMatchRequest(request.id, "rejected", noteFor(request.id)), t("common.rejected"))} />
+                    </>
+                  }
+                />
+              ))}
+            </ReviewPanel>
           ) : null}
 
           {tab === "licenses" ? (
+            <ReviewPanel title={t("admin.licenseReview")} empty={!pendingLicenses.length}>
+              {pendingLicenses.map((application) => (
+                <ReviewItem
+                  key={application.id}
+                  title={readText(application.applicantName, application.applicantNameKey, t)}
+                  meta={`${readText(application.country, application.countryKey, t)} · ${readText(application.city, application.cityKey, t)} · ${readText(application.partnership, application.partnershipKey, t)}`}
+                  status={<StatusBadge status={application.status} t={t} />}
+                  note={notes[application.id] ?? ""}
+                  notePlaceholder={t("admin.notePlaceholder")}
+                  onNote={(value) => setNote(application.id, value)}
+                  actions={
+                    <>
+                      <ActionButton label={t("admin.markContacted")} tone="blue" onClick={() => runReview(adminReviewLicenseApplication(application.id, "contacted", noteFor(application.id)), t("common.contacted"))} />
+                      <ActionButton label={t("common.approve")} tone="green" onClick={() => runReview(adminReviewLicenseApplication(application.id, "approved", noteFor(application.id)), t("common.approved"))} />
+                      <ActionButton label={t("common.reject")} tone="red" onClick={() => runReview(adminReviewLicenseApplication(application.id, "rejected", noteFor(application.id)), t("common.rejected"))} />
+                      <ActionButton label={t("common.requestInfo")} tone="blue" onClick={() => runReview(adminReviewLicenseApplication(application.id, "needs_more_info", noteFor(application.id)), t("common.needsMoreInfo"))} />
+                    </>
+                  }
+                />
+              ))}
+            </ReviewPanel>
+          ) : null}
+
+          {tab === "verifications" ? (
+            <ReviewPanel title={t("admin.verificationReview")} empty={!pendingVerifications.length}>
+              {pendingVerifications.map((verification) => (
+                <ReviewItem
+                  key={verification.id}
+                  title={verification.userName ?? verification.userId}
+                  meta={`${verification.type} · ${verification.documentUrl ?? "-"}`}
+                  status={<StatusBadge status={verification.status} t={t} />}
+                  note={notes[verification.id] ?? ""}
+                  notePlaceholder={t("admin.notePlaceholder")}
+                  onNote={(value) => setNote(verification.id, value)}
+                  actions={
+                    <>
+                      <ActionButton label={t("common.approve")} tone="green" onClick={() => runReview(adminReviewVerification(verification.id, "approved", noteFor(verification.id)), t("common.approved"))} />
+                      <ActionButton label={t("common.reject")} tone="red" onClick={() => runReview(adminReviewVerification(verification.id, "rejected", noteFor(verification.id)), t("common.rejected"))} />
+                      <ActionButton label={t("common.requestInfo")} tone="blue" onClick={() => runReview(adminReviewVerification(verification.id, "needs_more_info", noteFor(verification.id)), t("common.needsMoreInfo"))} />
+                    </>
+                  }
+                />
+              ))}
+            </ReviewPanel>
+          ) : null}
+
+          {tab === "users" ? (
             <section className="panel mt-6 overflow-hidden">
-              <TableHead labels={tArray("admin.tableLicense")} />
-              {pendingLicenses.length ? (
-                pendingLicenses.map((application) => (
-                  <div key={application.id} className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.2fr_1fr_1fr_1fr_160px] lg:items-center">
-                    <b>{readText(application.applicantName, application.applicantNameKey, t)}</b>
-                    <span className="text-slate-500">
-                      {readText(application.country, application.countryKey, t)} · {readText(application.city, application.cityKey, t)}
-                    </span>
-                    <span>{readText(application.partnership, application.partnershipKey, t)}</span>
-                    <StatusBadge status={application.status} t={t} />
-                    <div className="flex gap-2">
-                      <button onClick={() => reviewLicense(application.id, "approved")} className="rounded-xl bg-emerald-50 p-2 text-emerald-700">
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => reviewLicense(application.id, "rejected")} className="rounded-xl bg-rose-50 p-2 text-rose-700">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
+              <SectionTitle title={t("admin.userManagement")} />
+              {users.map((user) => (
+                <div key={user.id} className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_220px] lg:items-center">
+                  <b>{user.name ?? user.email}</b>
+                  <span className="text-slate-500">{user.email}</span>
+                  <span className="text-slate-500">{user.role}</span>
+                  <span className="font-black text-slate-700">{user.verifyStatus}</span>
+                  <div className="flex flex-wrap gap-2">
+                    <ActionButton label={t("admin.verifyUser")} tone="green" onClick={() => runReview(adminUpdateUserVerifyStatus(user.id, "verified", noteFor(user.id)), t("common.verified"))} />
+                    <ActionButton label={t("common.requestInfo")} tone="blue" onClick={() => runReview(adminUpdateUserVerifyStatus(user.id, "needs_more_info", noteFor(user.id)), t("common.needsMoreInfo"))} />
                   </div>
-                ))
-              ) : (
-                <EmptyState />
-              )}
+                </div>
+              ))}
             </section>
           ) : null}
 
           {tab === "audit" ? (
             <section className="panel mt-6 overflow-hidden">
-              <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 bg-slate-50 px-4 py-3 text-xs font-black text-slate-500">
-                <span>{t("admin.auditAction")}</span>
-                <span>{t("admin.auditTarget")}</span>
-                <span>{t("admin.auditTime")}</span>
-              </div>
-              {auditLogs.length ? (
-                auditLogs.map((log) => (
-                  <div key={log.id} className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1fr_1fr_1fr]">
-                    <span className="font-black">{log.action}</span>
-                    <span className="text-slate-500">
-                      {log.targetType} · {log.toStatus ? (log.toStatus === "contact_unlocked" ? matchStatusLabel(log.toStatus, t) : statusLabel(log.toStatus as SubmissionStatus, t)) : log.targetTitle}
-                    </span>
-                    <span className="text-slate-500">{new Date(log.createdAt).toLocaleString()}</span>
-                  </div>
-                ))
-              ) : (
-                <EmptyState />
-              )}
+              <SectionTitle title={t("admin.auditLog")} />
+              {auditLogs.length ? auditLogs.map((log) => <AuditRow key={log.id} log={log} />) : <EmptyState />}
             </section>
           ) : null}
         </main>
@@ -315,12 +322,113 @@ export default function AdminPage() {
   );
 }
 
-function TableHead({ labels }: { labels: string[] }) {
+function StatsGrid({ stats }: { stats: AdminStats }) {
+  const { t } = useI18n();
+  const items = [
+    [t("admin.pending"), stats.pendingResources],
+    [t("admin.approved"), stats.approvedResources],
+    [t("admin.demandReview"), stats.pendingDemands],
+    [t("admin.matchReview"), stats.pendingMatches],
+    [t("admin.licenseReview"), stats.pendingLicenses],
+    [t("admin.pendingVerifications"), stats.pendingVerifications],
+    [t("admin.totalUsers"), stats.users],
+    [t("admin.auditLog"), stats.auditLogs]
+  ];
+
   return (
-    <div className="hidden gap-3 bg-slate-50 px-4 py-3 text-xs font-black text-slate-500 lg:grid lg:grid-cols-[1.6fr_1fr_1fr_1fr_170px]">
-      {labels.map((label) => (
-        <span key={label}>{label}</span>
+    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {items.map(([label, value]) => (
+        <div key={label as string} className="panel p-5">
+          <small className="text-xs font-bold text-slate-500">{label as string}</small>
+          <b className="mt-2 block text-3xl font-black">{value as number}</b>
+        </div>
       ))}
+    </div>
+  );
+}
+
+function SectionTitle({ title }: { title: string }) {
+  return <h2 className="bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">{title}</h2>;
+}
+
+function ReviewPanel({ title, empty, children }: { title: string; empty: boolean; children: React.ReactNode }) {
+  return (
+    <section className="panel mt-6 overflow-hidden">
+      <SectionTitle title={title} />
+      {empty ? <EmptyState /> : children}
+    </section>
+  );
+}
+
+function ReviewItem({
+  title,
+  meta,
+  status,
+  note,
+  notePlaceholder,
+  onNote,
+  actions
+}: {
+  title: string;
+  meta: string;
+  status: React.ReactNode;
+  note: string;
+  notePlaceholder: string;
+  onNote: (value: string) => void;
+  actions: React.ReactNode;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.5fr_1.3fr_120px_1.6fr_260px] lg:items-center">
+      <b>{title}</b>
+      <span className="text-slate-500">{meta}</span>
+      <span>{status}</span>
+      <label className="grid gap-1">
+        <span className="text-xs font-black text-slate-400">{t("admin.note")}</span>
+        <textarea
+          value={note}
+          onChange={(event) => onNote(event.target.value)}
+          placeholder={notePlaceholder}
+          className="field min-h-16 w-full resize-none py-2 text-xs"
+        />
+      </label>
+      <div className="flex flex-wrap gap-2">{actions}</div>
+    </div>
+  );
+}
+
+function ActionButton({
+  label,
+  tone,
+  onClick,
+  icon
+}: {
+  label: string;
+  tone: "green" | "red" | "blue" | "gold";
+  onClick: () => void;
+  icon?: React.ReactNode;
+}) {
+  const toneClass = {
+    green: "bg-emerald-50 text-emerald-700",
+    red: "bg-rose-50 text-rose-700",
+    blue: "bg-sky-50 text-sky-700",
+    gold: "bg-yellow-50 text-yellow-700"
+  }[tone];
+
+  return (
+    <button onClick={onClick} className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-black ${toneClass}`}>
+      {icon ?? (tone === "red" ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />)}
+      {label}
+    </button>
+  );
+}
+
+function AuditRow({ log }: { log: AuditLogRecord }) {
+  return (
+    <div className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1fr_1fr_1fr]">
+      <span className="font-black">{log.action}</span>
+      <span className="text-slate-500">{log.targetType} · {log.note ?? log.targetTitle}</span>
+      <span className="text-slate-500">{new Date(log.createdAt).toLocaleString()}</span>
     </div>
   );
 }

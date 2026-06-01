@@ -35,6 +35,7 @@ export type ResourceRecord = LocalizedRecord & {
   ownerId: string;
   ownerNameKey?: string;
   ownerName?: string;
+  type?: string;
   cooperationKey?: string;
   cooperation?: string;
   targetKey?: string;
@@ -49,6 +50,7 @@ export type ResourceRecord = LocalizedRecord & {
   matchCount: number;
   completeness: number;
   contact: ContactProfile;
+  adminNote?: string;
   createdAt: string;
 };
 
@@ -59,6 +61,7 @@ export type DemandRecord = LocalizedRecord & {
   cooperation?: string;
   urgency?: string;
   status: SubmissionStatus;
+  adminNote?: string;
   createdAt: string;
 };
 
@@ -70,6 +73,8 @@ export type MatchRequestRecord = {
   applicantName?: string;
   intent: string;
   status: MatchRequestStatus;
+  adminNote?: string;
+  resourceTitle?: string;
   createdAt: string;
 };
 
@@ -86,6 +91,37 @@ export type LicenseApplicationRecord = {
   partnership?: string;
   contact: string;
   status: SubmissionStatus;
+  adminNote?: string;
+  note?: string;
+  companyName?: string;
+  createdAt: string;
+};
+
+export type VerificationRecord = {
+  id: string;
+  userId: string;
+  userName?: string;
+  type: string;
+  documentUrl?: string;
+  status: SubmissionStatus;
+  adminNote?: string;
+  reviewedAt?: string;
+  createdAt: string;
+};
+
+export type AdminUserRecord = {
+  id: string;
+  name?: string;
+  email: string;
+  phone?: string;
+  telegram?: string;
+  whatsapp?: string;
+  wechat?: string;
+  country?: string;
+  city?: string;
+  companyName?: string;
+  role: string;
+  verifyStatus: string;
   createdAt: string;
 };
 

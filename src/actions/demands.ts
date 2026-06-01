@@ -99,7 +99,10 @@ export async function adminReviewDemand(
     const admin = await requireAdmin();
     const demand = await prisma.demand.update({
       where: { id },
-      data: { status: statusMap[status] },
+      data: {
+        status: statusMap[status],
+        adminNote: note?.trim() || null
+      },
       select: { id: true }
     });
 

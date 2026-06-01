@@ -68,7 +68,12 @@ export async function getMyMatchRequests() {
   const user = await requireUser();
   const requests = await prisma.matchRequest.findMany({
     where: { requesterId: user.id },
-    include: { requester: { select: { id: true, name: true, email: true, companyName: true } } },
+    include: {
+      requester: { select: { id: true, name: true, email: true, companyName: true } },
+      resource: {
+        include: { user: { select: { id: true, name: true, email: true, companyName: true } } }
+      }
+    },
     orderBy: { createdAt: "desc" }
   });
   return requests.map(mapMatchRequest);

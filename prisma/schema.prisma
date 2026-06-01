@@ -128,6 +128,7 @@ model Resource {
   contactWechat      String?
   status             ResourceStatus @default(PENDING)
   isFeatured         Boolean        @default(false)
+  adminNote          String?
   viewCount          Int            @default(0)
   matchCount         Int            @default(0)
   createdAt          DateTime       @default(now())
@@ -162,6 +163,7 @@ model Demand {
   contactWhatsapp    String?
   contactWechat      String?
   status             ReviewStatus @default(PENDING)
+  adminNote          String?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 

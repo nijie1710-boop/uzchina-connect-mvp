@@ -13,7 +13,8 @@ import {
   type DemandRecord,
   type LicenseApplicationRecord,
   type MatchRequestRecord,
-  type ResourceRecord
+  type ResourceRecord,
+  type VerificationRecord
 } from "@/lib/domain";
 import { StatusBadge } from "@/components/status-badge";
 
@@ -35,6 +36,7 @@ type DashboardPayload = {
   demands: DemandRecord[];
   matches: MatchRequestRecord[];
   licenses: LicenseApplicationRecord[];
+  verifications: VerificationRecord[];
 };
 
 export default function DashboardPage() {
@@ -45,6 +47,7 @@ export default function DashboardPage() {
   const [myDemands, setMyDemands] = useState<DemandRecord[]>([]);
   const [myMatches, setMyMatches] = useState<MatchRequestRecord[]>([]);
   const [myLicenses, setMyLicenses] = useState<LicenseApplicationRecord[]>([]);
+  const [myVerifications, setMyVerifications] = useState<VerificationRecord[]>([]);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -60,6 +63,7 @@ export default function DashboardPage() {
         setMyDemands(payload.demands);
         setMyMatches(payload.matches);
         setMyLicenses(payload.licenses);
+        setMyVerifications(payload.verifications);
       } catch {
         router.push("/login");
       }
@@ -113,7 +117,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-4 grid gap-2">
-            {[t("dashboard.myResources"), t("dashboard.myDemands"), t("dashboard.myMatches"), t("dashboard.myLicenses")].map((item, index) => (
+            {[t("dashboard.myResources"), t("dashboard.myDemands"), t("dashboard.myMatches"), t("dashboard.myLicenses"), t("dashboard.myVerifications")].map((item, index) => (
               <button
                 key={item}
                 className={index === 0 ? "h-11 rounded-xl bg-sky-50 px-3 text-left text-sm font-black text-sky-700" : "h-11 rounded-xl px-3 text-left text-sm font-black text-slate-500 hover:bg-slate-50"}
@@ -123,14 +127,20 @@ export default function DashboardPage() {
             ))}
           </div>
           <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-            <h2 className="font-black">{t("dashboard.profile")}</h2>
+            <h2 className="font-black">{t("dashboard.accountProfile")}</h2>
             <div className="mt-3 grid gap-2 text-sm font-semibold text-slate-600">
               <p>{company}</p>
+              <p>{user.email}</p>
+              <p>{verificationStatus}</p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+            <h2 className="font-black">{t("dashboard.contactProfile")}</h2>
+            <div className="mt-3 grid gap-2 text-sm font-semibold text-slate-600">
               <p>{user.phone}</p>
               <p>{user.telegram}</p>
               <p>{user.whatsapp}</p>
               <p>{user.wechat}</p>
-              <p>{user.email}</p>
             </div>
           </div>
         </aside>
@@ -163,6 +173,7 @@ export default function DashboardPage() {
                 <Link href={`/resources/${resource.id}`} className="btn-outline h-9 px-4">
                   {t("dashboard.view")}
                 </Link>
+                <RecordNote note={resource.adminNote} />
               </div>
             ))}
           </DashboardTable>
@@ -174,6 +185,7 @@ export default function DashboardPage() {
                 <span className="text-slate-500">{localizedCategory(demand, t)}</span>
                 <StatusBadge status={demand.status} t={t} />
                 <button className="btn-outline h-9 px-4">{t("dashboard.view")}</button>
+                <RecordNote note={demand.adminNote} />
               </div>
             ))}
           </DashboardTable>
@@ -183,12 +195,13 @@ export default function DashboardPage() {
               const resource = myResources.find((item) => item.id === request.resourceId);
               return (
                 <div key={request.id} className="grid gap-2 border-t border-slate-100 p-4 text-sm md:grid-cols-[1.5fr_1fr_1fr_auto] md:items-center">
-                  <b>{resource ? resourceTitle(resource, t) : request.resourceId}</b>
+                  <b>{request.resourceTitle ?? (resource ? resourceTitle(resource, t) : request.resourceId)}</b>
                   <span className="text-slate-500">{request.intent}</span>
                   <span className="text-sm font-black text-slate-600">{matchStatusLabel(request.status, t)}</span>
                   <Link href={`/resources/${request.resourceId}`} className="btn-outline h-9 px-4">
                     {t("dashboard.view")}
                   </Link>
+                  <RecordNote note={request.adminNote} />
                 </div>
               );
             })}
@@ -201,12 +214,36 @@ export default function DashboardPage() {
                 <span className="text-slate-500">{readText(application.partnership, application.partnershipKey, t)}</span>
                 <StatusBadge status={application.status} t={t} />
                 <button className="btn-outline h-9 px-4">{t("dashboard.view")}</button>
+                <RecordNote note={application.adminNote} />
+              </div>
+            ))}
+          </DashboardTable>
+
+          <DashboardTable title={t("dashboard.myVerifications")}>
+            {myVerifications.map((verification) => (
+              <div key={verification.id} className="grid gap-2 border-t border-slate-100 p-4 text-sm md:grid-cols-[1.5fr_1fr_1fr_auto] md:items-center">
+                <b>{verification.type}</b>
+                <span className="text-slate-500">{verification.documentUrl ?? "-"}</span>
+                <StatusBadge status={verification.status} t={t} />
+                <button className="btn-outline h-9 px-4">{t("dashboard.view")}</button>
+                <RecordNote note={verification.adminNote} />
               </div>
             ))}
           </DashboardTable>
         </main>
       </div>
     </div>
+  );
+}
+
+function RecordNote({ note }: { note?: string }) {
+  const { t } = useI18n();
+  if (!note) return null;
+  return (
+    <p className="rounded-2xl bg-amber-50 p-3 text-xs font-semibold leading-5 text-amber-800 md:col-span-4">
+      <b>{t("dashboard.reviewNote")}：</b>
+      {note}
+    </p>
   );
 }
 
