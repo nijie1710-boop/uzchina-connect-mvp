@@ -1,0 +1,1423 @@
+import type { Locale } from "./config";
+
+type MessageValue = string | readonly string[] | { readonly [key: string]: MessageValue };
+export type Messages = { readonly [key: string]: MessageValue };
+
+const zhCN = {
+  meta: {
+    appName: "UzChina Connect",
+    appSub: "CONNECT",
+    localeName: "中文",
+    localeNotice: "其他中亚语言已预留 JSON 占位，正式上线前建议由当地译员校对许可证、合规和商务合作术语。"
+  },
+  nav: {
+    home: "首页",
+    resources: "资源大厅",
+    publish: "发布资源",
+    demand: "提交需求",
+    license: "许可证合作",
+    dashboard: "用户中心",
+    admin: "管理员后台",
+    login: "登录",
+    register: "注册"
+  },
+  common: {
+    search: "搜索",
+    viewAll: "查看全部资源",
+    apply: "申请对接",
+    submit: "提交",
+    submitReview: "提交审核",
+    saveDraft: "保存草稿",
+    approved: "已通过",
+    pending: "待审核",
+    rejected: "已拒绝",
+    needsMoreInfo: "需补资料",
+    featured: "推荐",
+    highRisk: "高风险",
+    contacted: "已联系",
+    contactManaged: "联系方式托管",
+    manualReview: "人工审核",
+    reviewed: "平台审核",
+    verified: "已认证",
+    recommended: "优先推荐",
+    available: "可申请",
+    close: "关闭",
+    approve: "通过",
+    reject: "拒绝",
+    requestInfo: "要求补资料",
+    approveUnlock: "通过并开放",
+    resetDemo: "重置演示数据",
+    language: "多语言"
+  },
+  home: {
+    badge: "中亚五国华人资源对接平台",
+    titleA: "连接中亚华人",
+    titleB: "商业资源",
+    subtitle: "找资源、找伙伴、找渠道、找许可证，一站式发布、审核、对接",
+    searchPlaceholder: "搜索资源、行业、城市、许可证、清关、物流、代理",
+    postResource: "我要发布资源",
+    findResource: "我要寻找资源",
+    licenseChannel: "酒烟许可证合作通道",
+    trust: ["覆盖中亚五国", "人工审核保障", "对接通过后开放联系", "多语言服务"],
+    featuredTitle: "精选推荐资源",
+    featuredSubtitle: "优先展示已审核、可对接、具备合作价值的资源",
+    categoriesTitle: "热门资源分类",
+    licenseTitle: "创始人稀缺资源：中亚酒烟许可证合作",
+    licenseSubtitle: "开放区域代理、供货分销、股权合作与合规服务合作名额。",
+    ctaTitle: "正在寻找中亚商业资源？",
+    ctaText: "无论你有资源想变现，还是有需求想找靠谱合作方，都可以先提交给平台审核。",
+    reviewTime: "平均 1-3 个工作日内完成初审。"
+  },
+  resources: {
+    title: "资源大厅",
+    subtitle: "浏览已审核的中亚商务资源，申请对接后获取联系方式。",
+    filters: "筛选资源",
+    type: "资源类型",
+    country: "国家",
+    category: "行业分类",
+    verification: "认证状态",
+    all: "全部",
+    supplier: "供方",
+    buyer: "需方",
+    license: "资质 / 渠道",
+    searchPlaceholder: "搜索关键词、国家、城市、行业",
+    foundPrefix: "共找到",
+    foundSuffix: "条资源",
+    sort: "默认：优先推荐",
+    onlyApproved: "只展示审核通过资源",
+    empty: "暂无符合条件的已审核资源"
+  },
+  detail: {
+    title: "资源详情 / 申请对接",
+    subtitle: "联系方式默认隐藏，提交申请并审核通过后开放。",
+    keyResource: "重点资源",
+    industry: "行业分类",
+    cooperation: "合作方式",
+    target: "适合对象",
+    description: "资源说明",
+    advantages: "合作优势",
+    files: "资质附件预览",
+    platformNote: "平台审核说明：联系方式不会公开展示。申请人提交对接理由后，由平台人工审核，审核通过后开放联系方式并记录对接行为。",
+    applyTitle: "申请对接",
+    applyText: "为了保护双方信息安全，联系方式由平台托管。提交申请后，管理员会审核你的合作意向。",
+    applyPlaceholder: "请说明你的资源、渠道、合作意向",
+    contactStatus: "联系信息状态",
+    phoneLocked: "电话：审核通过后开放",
+    emailLocked: "邮箱：审核通过后开放",
+    wechatLocked: "微信：审核通过后开放",
+    contactUnlocked: "联系方式已开放",
+    processTitle: "对接流程",
+    process: ["提交申请", "平台审核", "双方确认", "开放联系"],
+    submitted: "对接申请已提交，管理员审核通过后将开放联系方式。"
+  },
+  forms: {
+    publishTitle: "发布资源 / 提交平台审核",
+    publishSubtitle: "分步骤提交资源信息，平台审核通过后展示到资源大厅。",
+    steps: ["基本信息", "合作信息", "资质资料", "联系方式", "确认提交"],
+    resourceType: "资源类型",
+    countryCity: "国家 / 城市",
+    city: "城市",
+    category: "行业分类",
+    resourceTitle: "资源标题",
+    cooperationType: "合作方式",
+    budget: "预算 / 价格范围",
+    longTerm: "是否长期合作",
+    description: "资源详细描述",
+    documents: "营业执照、许可证 / 资质、证明材料",
+    contactName: "联系人",
+    wechat: "微信",
+    phone: "电话",
+    email: "邮箱",
+    telegram: "Telegram",
+    whatsapp: "WhatsApp",
+    safety: "联系方式不会公开展示，仅用于平台审核和对接服务。",
+    demandTitle: "提交需求",
+    demandSubtitle: "告诉平台你想找什么资源，管理员审核后协助匹配。",
+    needInfo: "需求信息",
+    detailInfo: "详细说明",
+    needTitle: "需求标题",
+    targetCountry: "目标国家 / 城市",
+    urgency: "是否紧急",
+    licenseTitle: "中亚酒烟许可证合作专区",
+    licenseSubtitle: "面向有渠道、有资金、有团队的合作伙伴，开放区域代理、供货分销、股权合作与合规服务合作。",
+    partnerApply: "申请成为合作伙伴",
+    name: "姓名",
+    company: "公司 / 团队名称",
+    channels: "现有渠道",
+    capital: "资金能力",
+    expectedPartnership: "期望合作方式",
+    contact: "微信 / 电话 / 邮箱",
+    notes: "补充说明",
+    submitApplication: "提交合作申请",
+    submittedResource: "资源已提交审核，可在用户中心和管理员后台查看。",
+    submittedDemand: "需求已提交，平台会根据行业、国家、预算和合作方式做人工撮合。",
+    submittedLicense: "许可证合作申请已提交，已进入后台待审核列表。"
+  },
+  auth: {
+    loginHero: "登录后申请对接、发布资源、查看审核进度",
+    loginHeroText: "面向中亚五国华人商圈，第一版使用邮箱作为主账号；手机号和即时通讯工具用于联系确认。",
+    welcome: "欢迎回来",
+    loginSubtitle: "登录后可以申请对接、管理资源、查看审核状态。",
+    emailLogin: "邮箱登录",
+    phoneOtp: "手机验证码",
+    email: "邮箱地址",
+    password: "密码",
+    loginButton: "登录",
+    oauthNote: "第一版先做邮箱 + 密码；手机号验证码、Telegram OAuth、Google OAuth 预留后续接入。",
+    noAccount: "还没有账号？",
+    createAccount: "立即注册",
+    registerHero: "注册成为平台用户",
+    registerHeroText: "先选择你的身份：资源方、需求方、服务商。后续可以提交企业认证、营业执照、许可证资料。",
+    registerTitle: "创建账号",
+    registerSubtitle: "推荐使用邮箱作为登录账号，手机号和 Telegram / WhatsApp / WeChat 作为联系与验证方式。",
+    supplier: "资源方",
+    buyer: "需求方",
+    service: "服务商",
+    phone: "手机号（含国家区号）",
+    messaging: "Telegram / WhatsApp / WeChat",
+    setPassword: "设置密码",
+    registerButton: "注册并进入认证",
+    hasAccount: "已有账号？",
+    goLogin: "去登录"
+  },
+  dashboard: {
+    title: "用户中心",
+    subtitle: "管理我的资源、需求、对接申请、许可证合作和认证资料。",
+    verificationPending: "认证待完善",
+    stats: ["已发布资源", "待审核", "对接申请", "认证状态"],
+    profile: "资料与联系方式",
+    myResources: "我的资源",
+    myDemands: "我的需求",
+    myMatches: "我的对接申请",
+    myLicenses: "许可证合作申请",
+    titleColumn: "标题",
+    typeColumn: "类型",
+    statusColumn: "状态",
+    actionColumn: "操作",
+    view: "查看",
+    matching: "匹配中"
+  },
+  admin: {
+    title: "管理员后台",
+    subtitle: "审核资源、需求、许可证合作与对接申请，所有操作写入审核记录。",
+    resourceReview: "资源审核",
+    matchReview: "对接申请",
+    licenseReview: "合作申请",
+    auditLog: "审核记录",
+    users: "用户",
+    pending: "待审核",
+    approved: "已通过",
+    needsMoreInfo: "需补资料",
+    highRisk: "高风险",
+    tableResource: ["资源标题", "国家城市", "分类", "提交人", "操作"],
+    tableMatch: ["资源", "申请人", "状态", "说明", "操作"],
+    tableLicense: ["申请人", "国家城市", "合作方式", "状态", "操作"],
+    drawerTitle: "审核详情",
+    completeness: "资料完整度",
+    notePlaceholder: "填写审核备注 / 拒绝原因 / 补充资料要求",
+    contactHidden: "前台联系方式默认隐藏，只有对接申请通过后开放。",
+    noPending: "当前没有待审核项目",
+    auditAction: "审核动作",
+    auditTarget: "审核对象",
+    auditTime: "时间"
+  },
+  mock: {
+    userName: "王先生",
+    userCompany: "塔什干华商贸易服务",
+    resources: {
+      licenseTashkent: {
+        title: "寻找酒类区域代理合作伙伴",
+        desc: "持有本地相关资质，寻找有渠道、有团队的区域合作伙伴。",
+        category: "酒烟许可证",
+        country: "乌兹别克斯坦",
+        city: "塔什干",
+        cooperation: "区域代理 / 供货分销",
+        target: "有渠道 / 有团队",
+        advantages: ["本地稀缺资质资源", "可做区域授权合作", "平台托管联系信息", "支持后续合规服务"],
+        docs: ["许可证摘要", "公司资料", "合作说明"]
+      },
+      logisticsAlmaty: {
+        title: "提供中哈物流清关服务",
+        desc: "国际物流、清关报关、规关代理，适合中亚贸易客户。",
+        category: "物流清关",
+        country: "哈萨克斯坦",
+        city: "阿拉木图",
+        cooperation: "长期服务 / 项目合作",
+        target: "跨境贸易客户",
+        advantages: ["熟悉口岸流程", "支持中文沟通", "可做长期账期", "覆盖多个城市"],
+        docs: ["公司介绍", "清关案例", "服务报价"]
+      },
+      warehouseBishkek: {
+        title: "寻找本地仓储合作方",
+        desc: "提供仓储、海外仓、本地配送等合作机会。",
+        category: "本地仓储",
+        country: "吉尔吉斯斯坦",
+        city: "比什凯克",
+        cooperation: "仓配合作 / 海外仓",
+        target: "电商和贸易商",
+        advantages: ["近市区仓库", "可做小批量配送", "支持代收代发", "可对接本地车队"],
+        docs: ["仓库照片", "租赁协议", "报价单"]
+      },
+      constructionDushanbe: {
+        title: "工程建材供应及安装团队合作",
+        desc: "面向工程项目提供建材、安装队伍和施工团队。",
+        category: "建材工程",
+        country: "塔吉克斯坦",
+        city: "杜尚别",
+        cooperation: "项目承包 / 供应安装",
+        target: "工程项目方",
+        advantages: ["本地施工团队", "支持材料集采", "可配合项目周期", "有跨境采购经验"],
+        docs: ["项目案例", "团队资质", "报价说明"]
+      },
+      pendingTrade: {
+        title: "寻找食品进出口渠道合作",
+        desc: "计划拓展中亚食品进出口业务，寻找本地渠道与代理伙伴。",
+        category: "进出口贸易",
+        country: "乌兹别克斯坦",
+        city: "撒马尔罕",
+        cooperation: "代理分销",
+        target: "本地渠道商",
+        advantages: ["供应稳定", "可做独家区域", "支持样品测试", "需要平台审核"],
+        docs: ["产品目录", "公司资料", "授权草案"]
+      }
+    },
+    categories: [
+      "酒烟许可证",
+      "物流清关",
+      "进出口贸易",
+      "本地仓储",
+      "建材工程",
+      "代理分销",
+      "劳务团队",
+      "财税法务"
+    ],
+    demand: {
+      title: "寻找清关服务商",
+      desc: "需要在哈萨克斯坦阿拉木图对接稳定的清关服务商。",
+      category: "物流清关"
+    },
+    license: {
+      agency: "区域代理",
+      distribution: "供货分销",
+      equity: "股权合作",
+      compliance: "合规服务"
+    }
+  },
+  toast: {
+    loggedIn: "已登录并进入用户中心",
+    registered: "注册申请已提交，可继续完善认证资料",
+    resourceApproved: "资源已通过，前台资源大厅可见",
+    resourceRejected: "资源已拒绝",
+    resourceNeedInfo: "已标记为需补资料",
+    matchSubmitted: "对接申请已提交",
+    matchUnlocked: "对接申请已通过，联系方式已开放",
+    licenseApproved: "合作申请已通过",
+    demoReset: "演示数据已重置"
+  }
+} as const;
+
+const en = {
+  meta: {
+    appName: "UzChina Connect",
+    appSub: "CONNECT",
+    localeName: "English",
+    localeNotice: "Central Asian language JSON placeholders are ready. License, compliance, and business terms should be reviewed by native translators before launch."
+  },
+  nav: {
+    home: "Home",
+    resources: "Resources",
+    publish: "Post Resource",
+    demand: "Submit Need",
+    license: "License Partnership",
+    dashboard: "Dashboard",
+    admin: "Admin",
+    login: "Log in",
+    register: "Register"
+  },
+  common: {
+    search: "Search",
+    viewAll: "View all resources",
+    apply: "Apply to connect",
+    submit: "Submit",
+    submitReview: "Submit for review",
+    saveDraft: "Save draft",
+    approved: "Approved",
+    pending: "Pending",
+    rejected: "Rejected",
+    needsMoreInfo: "Needs more info",
+    featured: "Featured",
+    highRisk: "High risk",
+    contacted: "Contacted",
+    contactManaged: "Contact managed",
+    manualReview: "Manual review",
+    reviewed: "Reviewed",
+    verified: "Verified",
+    recommended: "Recommended",
+    available: "Available",
+    close: "Close",
+    approve: "Approve",
+    reject: "Reject",
+    requestInfo: "Request info",
+    approveUnlock: "Approve and unlock",
+    resetDemo: "Reset demo data",
+    language: "Language"
+  },
+  home: {
+    badge: "Central Asia Chinese business network",
+    titleA: "Connect Chinese business",
+    titleB: "resources in Central Asia",
+    subtitle: "Find resources, partners, channels, and licenses in one reviewed connection platform.",
+    searchPlaceholder: "Search resources, industries, cities, licenses, customs, logistics",
+    postResource: "Post a resource",
+    findResource: "Find resources",
+    licenseChannel: "Alcohol and tobacco license channel",
+    trust: ["Five Central Asian countries", "Manual review", "Contact opens after approval", "Multilingual service"],
+    featuredTitle: "Featured resources",
+    featuredSubtitle: "Reviewed and connectable resources with clear partnership value",
+    categoriesTitle: "Popular categories",
+    licenseTitle: "Founder scarce asset: Central Asia alcohol and tobacco license partnerships",
+    licenseSubtitle: "Regional agency, supply distribution, equity partnership, and compliance services are open.",
+    ctaTitle: "Looking for Central Asian business resources?",
+    ctaText: "Whether you have resources to monetize or need reliable partners, submit it for platform review first.",
+    reviewTime: "Initial review usually takes 1-3 business days."
+  },
+  resources: {
+    title: "Resource Hall",
+    subtitle: "Browse reviewed Central Asian business resources. Apply to connect to access contact info.",
+    filters: "Filters",
+    type: "Resource type",
+    country: "Country",
+    category: "Category",
+    verification: "Verification",
+    all: "All",
+    supplier: "Supplier",
+    buyer: "Buyer",
+    license: "License / channel",
+    searchPlaceholder: "Search keyword, country, city, industry",
+    foundPrefix: "Found",
+    foundSuffix: "resources",
+    sort: "Default: recommended first",
+    onlyApproved: "Only approved resources are shown",
+    empty: "No approved resources match the current filters"
+  },
+  detail: {
+    title: "Resource details / Apply to connect",
+    subtitle: "Contact info is hidden by default and opens after application approval.",
+    keyResource: "Key resource",
+    industry: "Industry",
+    cooperation: "Partnership type",
+    target: "Best fit",
+    description: "Description",
+    advantages: "Advantages",
+    files: "Credential preview",
+    platformNote: "Platform note: contact info is not publicly shown. Applicants submit a reason, admins review it manually, and contact information opens after approval.",
+    applyTitle: "Apply to connect",
+    applyText: "To protect both sides, contact info is managed by the platform. Admins review your intent after submission.",
+    applyPlaceholder: "Describe your resources, channels, and partnership intent",
+    contactStatus: "Contact status",
+    phoneLocked: "Phone: opens after approval",
+    emailLocked: "Email: opens after approval",
+    wechatLocked: "WeChat: opens after approval",
+    contactUnlocked: "Contact info unlocked",
+    processTitle: "Connection process",
+    process: ["Submit request", "Platform review", "Both sides confirm", "Unlock contact"],
+    submitted: "Connection request submitted. Contact info opens after admin approval."
+  },
+  forms: {
+    publishTitle: "Post resource / Submit for review",
+    publishSubtitle: "Submit resource info step by step. Once approved, it appears in the Resource Hall.",
+    steps: ["Basic info", "Partnership", "Credentials", "Contact", "Confirm"],
+    resourceType: "Resource type",
+    countryCity: "Country / city",
+    city: "City",
+    category: "Category",
+    resourceTitle: "Resource title",
+    cooperationType: "Partnership type",
+    budget: "Budget / price range",
+    longTerm: "Long-term cooperation",
+    description: "Detailed description",
+    documents: "Business license, credential, proof files",
+    contactName: "Contact person",
+    wechat: "WeChat",
+    phone: "Phone",
+    email: "Email",
+    telegram: "Telegram",
+    whatsapp: "WhatsApp",
+    safety: "Contact info is not public and is used only for review and connection services.",
+    demandTitle: "Submit need",
+    demandSubtitle: "Tell the platform what you are looking for; admins can review and help match resources.",
+    needInfo: "Need info",
+    detailInfo: "Details",
+    needTitle: "Need title",
+    targetCountry: "Target country / city",
+    urgency: "Urgency",
+    licenseTitle: "Central Asia alcohol and tobacco license partnership",
+    licenseSubtitle: "For partners with channels, capital, or teams. Regional agency, distribution, equity partnership, and compliance services are open.",
+    partnerApply: "Apply as a partner",
+    name: "Name",
+    company: "Company / team",
+    channels: "Existing channels",
+    capital: "Capital ability",
+    expectedPartnership: "Expected partnership",
+    contact: "WeChat / phone / email",
+    notes: "Notes",
+    submitApplication: "Submit application",
+    submittedResource: "Resource submitted for review. It is visible in Dashboard and Admin.",
+    submittedDemand: "Need submitted. The platform can match by industry, country, budget, and partnership type.",
+    submittedLicense: "License partnership application submitted and waiting for admin review."
+  },
+  auth: {
+    loginHero: "Log in to connect, post resources, and track review status",
+    loginHeroText: "For Central Asian Chinese business circles, MVP uses email as the main account. Phone and messengers are kept for contact confirmation.",
+    welcome: "Welcome back",
+    loginSubtitle: "Log in to apply, manage resources, and check review status.",
+    emailLogin: "Email login",
+    phoneOtp: "Phone OTP",
+    email: "Email address",
+    password: "Password",
+    loginButton: "Log in",
+    oauthNote: "MVP starts with email and password. Phone OTP, Telegram OAuth, and Google OAuth are reserved for later.",
+    noAccount: "No account yet?",
+    createAccount: "Register now",
+    registerHero: "Create your platform account",
+    registerHeroText: "Choose your role first: supplier, buyer, or service provider. Company and license verification can be added later.",
+    registerTitle: "Create account",
+    registerSubtitle: "Use email as the login account. Phone, Telegram, WhatsApp, and WeChat are contact and verification fields.",
+    supplier: "Supplier",
+    buyer: "Buyer",
+    service: "Service provider",
+    phone: "Phone with country code",
+    messaging: "Telegram / WhatsApp / WeChat",
+    setPassword: "Create password",
+    registerButton: "Register and verify",
+    hasAccount: "Already have an account?",
+    goLogin: "Log in"
+  },
+  dashboard: {
+    title: "Dashboard",
+    subtitle: "Manage resources, needs, connection requests, license partnerships, and verification profile.",
+    verificationPending: "Verification pending",
+    stats: ["Resources", "Pending", "Requests", "Verification"],
+    profile: "Profile and contacts",
+    myResources: "My resources",
+    myDemands: "My needs",
+    myMatches: "Connection requests",
+    myLicenses: "License applications",
+    titleColumn: "Title",
+    typeColumn: "Type",
+    statusColumn: "Status",
+    actionColumn: "Action",
+    view: "View",
+    matching: "Matching"
+  },
+  admin: {
+    title: "Admin",
+    subtitle: "Review resources, needs, license applications, and connection requests. Every action is written to audit logs.",
+    resourceReview: "Resource review",
+    matchReview: "Connection requests",
+    licenseReview: "Partner applications",
+    auditLog: "Audit log",
+    users: "Users",
+    pending: "Pending",
+    approved: "Approved",
+    needsMoreInfo: "Needs info",
+    highRisk: "High risk",
+    tableResource: ["Resource title", "Country/city", "Category", "Submitter", "Actions"],
+    tableMatch: ["Resource", "Applicant", "Status", "Intent", "Actions"],
+    tableLicense: ["Applicant", "Country/city", "Partnership", "Status", "Actions"],
+    drawerTitle: "Review details",
+    completeness: "Completeness",
+    notePlaceholder: "Review note / rejection reason / request more documents",
+    contactHidden: "Public contact info stays hidden and opens only after a connection request is approved.",
+    noPending: "No pending items",
+    auditAction: "Action",
+    auditTarget: "Target",
+    auditTime: "Time"
+  },
+  mock: {
+    userName: "Mr. Wang",
+    userCompany: "Tashkent Chinese Business Trade Service",
+    resources: {
+      licenseTashkent: {
+        title: "Seeking regional alcohol distribution partners",
+        desc: "Local license resource seeking partners with channels and teams.",
+        category: "Alcohol and tobacco license",
+        country: "Uzbekistan",
+        city: "Tashkent",
+        cooperation: "Regional agency / distribution",
+        target: "Channels / teams",
+        advantages: ["Scarce local license", "Regional authorization possible", "Platform-managed contact", "Compliance support available"],
+        docs: ["License summary", "Company files", "Partnership notes"]
+      },
+      logisticsAlmaty: {
+        title: "China-Kazakhstan logistics and customs clearance",
+        desc: "International logistics, customs clearance, and cross-border trade support.",
+        category: "Logistics and customs",
+        country: "Kazakhstan",
+        city: "Almaty",
+        cooperation: "Long-term service / project",
+        target: "Cross-border traders",
+        advantages: ["Port process experience", "Chinese communication", "Long-term billing possible", "Multiple cities covered"],
+        docs: ["Company deck", "Customs cases", "Service quotation"]
+      },
+      warehouseBishkek: {
+        title: "Seeking local warehousing partners",
+        desc: "Warehousing, overseas warehouse, and local delivery cooperation.",
+        category: "Warehousing",
+        country: "Kyrgyzstan",
+        city: "Bishkek",
+        cooperation: "Storage and delivery / overseas warehouse",
+        target: "E-commerce and traders",
+        advantages: ["Warehouse near city", "Small-batch delivery", "Pick-pack support", "Local fleet connections"],
+        docs: ["Warehouse photos", "Lease agreement", "Quotation"]
+      },
+      constructionDushanbe: {
+        title: "Construction materials and installation team cooperation",
+        desc: "Materials, installation teams, and execution for construction projects.",
+        category: "Construction",
+        country: "Tajikistan",
+        city: "Dushanbe",
+        cooperation: "Project contracting / supply installation",
+        target: "Construction project owners",
+        advantages: ["Local execution team", "Materials procurement", "Project schedule support", "Cross-border sourcing experience"],
+        docs: ["Project cases", "Team credentials", "Pricing notes"]
+      },
+      pendingTrade: {
+        title: "Seeking food import and export channel partners",
+        desc: "Expanding Central Asia food trade and seeking local channels and agency partners.",
+        category: "Import and export trade",
+        country: "Uzbekistan",
+        city: "Samarkand",
+        cooperation: "Agency distribution",
+        target: "Local channel partners",
+        advantages: ["Stable supply", "Exclusive region possible", "Sample testing support", "Requires platform review"],
+        docs: ["Product catalog", "Company files", "Authorization draft"]
+      }
+    },
+    categories: [
+      "Alcohol license",
+      "Logistics",
+      "Trade",
+      "Warehousing",
+      "Construction",
+      "Distribution",
+      "Labor teams",
+      "Legal and tax"
+    ],
+    demand: {
+      title: "Need customs service provider",
+      desc: "Need stable customs service providers in Almaty, Kazakhstan.",
+      category: "Logistics and customs"
+    },
+    license: {
+      agency: "Regional agency",
+      distribution: "Supply distribution",
+      equity: "Equity partnership",
+      compliance: "Compliance service"
+    }
+  },
+  toast: {
+    loggedIn: "Logged in and opened Dashboard",
+    registered: "Registration submitted. Continue completing verification profile.",
+    resourceApproved: "Resource approved and visible in Resource Hall",
+    resourceRejected: "Resource rejected",
+    resourceNeedInfo: "Marked as needs more info",
+    matchSubmitted: "Connection request submitted",
+    matchUnlocked: "Connection request approved and contact info unlocked",
+    licenseApproved: "Partnership application approved",
+    demoReset: "Demo data reset"
+  }
+} as const;
+
+function isMessageRecord(value: MessageValue | undefined): value is { readonly [key: string]: MessageValue } {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function mergeMessages(base: Messages, overrides: Messages): Messages {
+  const result: Record<string, MessageValue> = { ...base };
+
+  for (const [key, value] of Object.entries(overrides)) {
+    const baseValue = result[key];
+    result[key] = isMessageRecord(baseValue) && isMessageRecord(value) ? mergeMessages(baseValue, value) : value;
+  }
+
+  return result;
+}
+
+function betaFallbackMessages(base: Messages, localeTag: string): Messages {
+  const result: Record<string, MessageValue> = {};
+
+  for (const [key, value] of Object.entries(base)) {
+    if (typeof value === "string") {
+      result[key] = `${localeTag} · ${value}`;
+    } else if (Array.isArray(value)) {
+      result[key] = value.map((item) => `${localeTag} · ${item}`);
+    } else if (isMessageRecord(value)) {
+      result[key] = betaFallbackMessages(value, localeTag);
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+const uz = {
+  meta: {
+    localeName: "O'zbekcha",
+    localeNotice: "Beta tarjima: asosiy interfeys o'zbekchalashtirildi. Litsenziya va huquqiy atamalar ishga tushirishdan oldin mahalliy mutaxassislar tomonidan tekshirilishi kerak."
+  },
+  nav: {
+    home: "Bosh sahifa",
+    resources: "Resurslar",
+    publish: "Resurs joylash",
+    demand: "Talab yuborish",
+    license: "Litsenziya hamkorligi",
+    dashboard: "Kabinet",
+    admin: "Admin panel",
+    login: "Kirish",
+    register: "Ro'yxatdan o'tish"
+  },
+  common: {
+    search: "Qidirish",
+    viewAll: "Barcha resurslar",
+    apply: "Ulanish so'rovi",
+    submit: "Yuborish",
+    submitReview: "Tekshiruvga yuborish",
+    saveDraft: "Qoralama saqlash",
+    approved: "Tasdiqlangan",
+    pending: "Kutilmoqda",
+    rejected: "Rad etilgan",
+    needsMoreInfo: "Qo'shimcha ma'lumot kerak",
+    featured: "Tavsiya",
+    highRisk: "Yuqori xavf",
+    contacted: "Bog'lanilgan",
+    contactManaged: "Aloqa platformada saqlanadi",
+    manualReview: "Qo'lda tekshiruv",
+    reviewed: "Platforma tekshiruvi",
+    verified: "Tasdiqlangan",
+    recommended: "Tavsiya etilgan",
+    available: "Ariza berish mumkin",
+    close: "Yopish",
+    approve: "Tasdiqlash",
+    reject: "Rad etish",
+    requestInfo: "Ma'lumot so'rash",
+    approveUnlock: "Tasdiqlash va ochish",
+    resetDemo: "Demo ma'lumotni tiklash",
+    language: "Til"
+  },
+  home: {
+    badge: "Markaziy Osiyodagi xitoy biznes resurslari platformasi",
+    titleA: "Markaziy Osiyodagi",
+    titleB: "biznes resurslarni bog'lash",
+    subtitle: "Resurs, hamkor, kanal va litsenziyalarni topish uchun tekshiruvli ulanish platformasi",
+    searchPlaceholder: "Resurs, soha, shahar, litsenziya, bojxona, logistika qidiring",
+    postResource: "Resurs joylash",
+    findResource: "Resurs qidirish",
+    licenseChannel: "Alkogol va tamaki litsenziyasi kanali",
+    trust: ["5 ta Markaziy Osiyo davlati", "Qo'lda tekshiruv", "Aloqa faqat tasdiqdan keyin", "Ko'p tilli xizmat"],
+    featuredTitle: "Tavsiya qilingan resurslar",
+    featuredSubtitle: "Tekshirilgan va hamkorlik qiymati aniq resurslar",
+    categoriesTitle: "Mashhur toifalar",
+    licenseTitle: "Noyob resurs: Markaziy Osiyo alkogol va tamaki litsenziyalari",
+    licenseSubtitle: "Hududiy agentlik, ta'minot, ulushli hamkorlik va compliance xizmatlari ochiq.",
+    ctaTitle: "Markaziy Osiyo biznes resurslarini qidiryapsizmi?",
+    ctaText: "Resursingiz bormi yoki ishonchli hamkor kerakmi, avval platforma tekshiruviga yuboring.",
+    reviewTime: "Dastlabki tekshiruv odatda 1-3 ish kuni."
+  },
+  resources: {
+    title: "Resurslar zali",
+    subtitle: "Tekshirilgan biznes resurslarini ko'ring. Aloqa ma'lumotlari ariza tasdiqlangandan keyin ochiladi.",
+    filters: "Filtrlar",
+    type: "Resurs turi",
+    country: "Davlat",
+    category: "Toifa",
+    verification: "Tasdiq holati",
+    all: "Barchasi",
+    supplier: "Yetkazib beruvchi",
+    buyer: "Xaridor",
+    license: "Litsenziya / kanal",
+    searchPlaceholder: "Kalit so'z, davlat, shahar, soha",
+    foundPrefix: "Topildi",
+    foundSuffix: "resurs",
+    sort: "Avval tavsiya qilinganlar",
+    onlyApproved: "Faqat tasdiqlangan resurslar ko'rsatiladi",
+    empty: "Mos tasdiqlangan resurs yo'q"
+  },
+  detail: {
+    title: "Resurs tafsiloti / ulanish",
+    subtitle: "Aloqa ma'lumotlari yashirilgan va tasdiqdan keyin ochiladi.",
+    keyResource: "Muhim resurs",
+    industry: "Soha",
+    cooperation: "Hamkorlik turi",
+    target: "Mos hamkor",
+    description: "Tavsif",
+    advantages: "Afzalliklar",
+    files: "Hujjatlar ko'rinishi",
+    applyTitle: "Ulanish so'rovi",
+    applyText: "Tomonlarni himoya qilish uchun aloqa platformada saqlanadi. Admin niyatingizni tekshiradi.",
+    applyPlaceholder: "Resursingiz, kanalingiz va hamkorlik niyatingizni yozing",
+    contactStatus: "Aloqa holati",
+    contactUnlocked: "Aloqa ochildi",
+    processTitle: "Ulanish jarayoni",
+    process: ["So'rov yuborish", "Platforma tekshiruvi", "Tomonlar tasdiqlaydi", "Aloqa ochiladi"],
+    submitted: "Ulanish so'rovi yuborildi."
+  },
+  forms: {
+    publishTitle: "Resurs joylash / tekshiruvga yuborish",
+    publishSubtitle: "Resurs ma'lumotlarini yuboring. Tasdiqlangandan keyin resurslar zalida ko'rinadi.",
+    steps: ["Asosiy ma'lumot", "Hamkorlik", "Hujjatlar", "Aloqa", "Tasdiqlash"],
+    demandTitle: "Talab yuborish",
+    demandSubtitle: "Nima qidirayotganingizni yozing, admin moslashtirishga yordam beradi.",
+    licenseTitle: "Markaziy Osiyo litsenziya hamkorligi",
+    licenseSubtitle: "Kanal, kapital yoki jamoaga ega hamkorlar uchun ochiq.",
+    partnerApply: "Hamkor bo'lish uchun ariza",
+    submitApplication: "Ariza yuborish"
+  },
+  auth: {
+    loginHero: "Kirish: ulanish, resurs joylash va tekshiruv holatini kuzatish",
+    welcome: "Xush kelibsiz",
+    loginSubtitle: "Kirgandan keyin ariza, resurs boshqaruvi va holatni ko'rish mumkin.",
+    loginButton: "Kirish",
+    registerTitle: "Hisob yaratish",
+    registerButton: "Ro'yxatdan o'tish va tekshirish"
+  },
+  dashboard: {
+    title: "Kabinet",
+    subtitle: "Resurslar, talablar, ulanish so'rovlari va tekshiruv profilini boshqaring.",
+    verificationPending: "Tekshiruv kutilmoqda",
+    stats: ["Resurslar", "Kutilmoqda", "So'rovlar", "Tasdiq"],
+    profile: "Profil va aloqa",
+    myResources: "Mening resurslarim",
+    myDemands: "Mening talablarim",
+    myMatches: "Ulanish so'rovlari",
+    myLicenses: "Litsenziya arizalari",
+    titleColumn: "Sarlavha",
+    typeColumn: "Turi",
+    statusColumn: "Holat",
+    actionColumn: "Amal",
+    view: "Ko'rish",
+    matching: "Moslashtirilmoqda"
+  },
+  admin: {
+    title: "Admin panel",
+    subtitle: "Resurslar, talablar va ulanish so'rovlarini tekshiring. Har bir amal auditga yoziladi.",
+    resourceReview: "Resurs tekshiruvi",
+    matchReview: "Ulanish so'rovlari",
+    licenseReview: "Hamkorlik arizalari",
+    auditLog: "Audit jurnali",
+    users: "Foydalanuvchilar",
+    noPending: "Kutilayotgan narsa yo'q",
+    pending: "Kutilmoqda",
+    approved: "Tasdiqlangan",
+    needsMoreInfo: "Ma'lumot kerak",
+    highRisk: "Yuqori xavf",
+    drawerTitle: "Tekshiruv tafsiloti",
+    completeness: "To'liqlik",
+    contactHidden: "Ommaviy aloqa yashiriladi va faqat ulanish so'rovi tasdiqlangandan keyin ochiladi.",
+    auditAction: "Amal",
+    auditTarget: "Obyekt",
+    auditTime: "Vaqt"
+  },
+  toast: {
+    loggedIn: "Kirdingiz va kabinet ochildi",
+    registered: "Ro'yxatdan o'tish yuborildi",
+    resourceApproved: "Resurs tasdiqlandi va ko'rinadi",
+    resourceRejected: "Resurs rad etildi",
+    resourceNeedInfo: "Qo'shimcha ma'lumot kerak deb belgilandi",
+    matchSubmitted: "Ulanish so'rovi yuborildi",
+    matchUnlocked: "Ulanish tasdiqlandi va aloqa ochildi",
+    licenseApproved: "Hamkorlik arizasi tasdiqlandi",
+    demoReset: "Demo ma'lumot tiklandi"
+  }
+} as const;
+
+const kk = {
+  meta: {
+    localeName: "Қазақша",
+    localeNotice: "Beta аударма: негізгі интерфейс қазақшаға аударылды. Лицензия және құқықтық терминдер іске қосар алдында жергілікті мамандармен тексерілуі керек."
+  },
+  nav: {
+    home: "Басты бет",
+    resources: "Ресурстар",
+    publish: "Ресурс жариялау",
+    demand: "Сұраныс жіберу",
+    license: "Лицензия серіктестігі",
+    dashboard: "Кабинет",
+    admin: "Әкімші панелі",
+    login: "Кіру",
+    register: "Тіркелу"
+  },
+  common: {
+    search: "Іздеу",
+    viewAll: "Барлық ресурстар",
+    apply: "Байланысуға өтінім",
+    submitReview: "Тексеруге жіберу",
+    approved: "Мақұлданды",
+    pending: "Күтуде",
+    rejected: "Қабылданбады",
+    needsMoreInfo: "Қосымша ақпарат керек",
+    featured: "Ұсынылған",
+    highRisk: "Жоғары тәуекел",
+    contacted: "Байланыс жасалды",
+    contactManaged: "Байланыс платформада сақталады",
+    manualReview: "Қолмен тексеру",
+    available: "Өтінім беруге болады",
+    language: "Тіл",
+    approveUnlock: "Мақұлдау және ашу",
+    resetDemo: "Демоны қалпына келтіру"
+  },
+  home: {
+    badge: "Орталық Азиядағы қытай бизнес ресурстары платформасы",
+    titleA: "Орталық Азиядағы",
+    titleB: "бизнес ресурстарды байланыстыру",
+    subtitle: "Ресурс, серіктес, арна және лицензия табуға арналған тексерілетін платформа",
+    searchPlaceholder: "Ресурс, сала, қала, лицензия, кеден, логистика іздеу",
+    postResource: "Ресурс жариялау",
+    findResource: "Ресурс іздеу",
+    licenseChannel: "Алкоголь және темекі лицензиясы арнасы",
+    trust: ["Орталық Азияның 5 елі", "Қолмен тексеру", "Байланыс мақұлданғаннан кейін ашылады", "Көптілді қызмет"],
+    featuredTitle: "Ұсынылған ресурстар",
+    featuredSubtitle: "Тексерілген және серіктестік құны айқын ресурстар",
+    categoriesTitle: "Танымал санаттар",
+    ctaTitle: "Орталық Азия бизнес ресурстарын іздеп жүрсіз бе?"
+  },
+  resources: {
+    title: "Ресурстар залы",
+    subtitle: "Тексерілген ресурстарды көріңіз. Байланыс деректері өтінім мақұлданғаннан кейін ашылады.",
+    filters: "Сүзгілер",
+    all: "Барлығы",
+    searchPlaceholder: "Кілт сөз, ел, қала, сала",
+    foundPrefix: "Табылды",
+    foundSuffix: "ресурс",
+    sort: "Алдымен ұсынылғандар",
+    onlyApproved: "Тек мақұлданған ресурстар көрсетіледі"
+  },
+  detail: {
+    title: "Ресурс мәліметі / байланысу",
+    applyTitle: "Байланысуға өтінім",
+    contactStatus: "Байланыс күйі",
+    contactUnlocked: "Байланыс ашылды",
+    processTitle: "Байланысу процесі",
+    process: ["Өтінім жіберу", "Платформа тексеруі", "Тараптар растайды", "Байланыс ашылады"]
+  },
+  forms: {
+    publishTitle: "Ресурс жариялау / тексеруге жіберу",
+    demandTitle: "Сұраныс жіберу",
+    licenseTitle: "Орталық Азия лицензия серіктестігі",
+    partnerApply: "Серіктес болуға өтінім",
+    submitApplication: "Өтінім жіберу"
+  },
+  auth: {
+    welcome: "Қош келдіңіз",
+    loginButton: "Кіру",
+    registerTitle: "Аккаунт жасау",
+    registerButton: "Тіркелу және тексеру"
+  },
+  dashboard: {
+    title: "Кабинет",
+    verificationPending: "Тексеру күтуде",
+    stats: ["Ресурстар", "Күтуде", "Өтінімдер", "Тексеру"],
+    profile: "Профиль және байланыстар",
+    myResources: "Менің ресурстарым",
+    myDemands: "Менің сұраныстарым",
+    myMatches: "Байланысу өтінімдері",
+    myLicenses: "Лицензия өтінімдері",
+    titleColumn: "Атауы",
+    typeColumn: "Түрі",
+    statusColumn: "Күйі",
+    actionColumn: "Әрекет",
+    view: "Көру",
+    matching: "Сәйкестендіруде"
+  },
+  admin: {
+    title: "Әкімші панелі",
+    resourceReview: "Ресурс тексеруі",
+    matchReview: "Байланысу өтінімдері",
+    licenseReview: "Серіктестік өтінімдері",
+    auditLog: "Аудит журналы",
+    noPending: "Күтудегі өтінім жоқ",
+    drawerTitle: "Тексеру мәліметі",
+    completeness: "Толықтық",
+    auditAction: "Әрекет",
+    auditTarget: "Нысан",
+    auditTime: "Уақыт"
+  },
+  toast: {
+    loggedIn: "Кірдіңіз және кабинет ашылды",
+    registered: "Тіркелу өтінімі жіберілді",
+    resourceApproved: "Ресурс мақұлданып, көрінеді",
+    resourceRejected: "Ресурс қабылданбады",
+    resourceNeedInfo: "Қосымша ақпарат керек деп белгіленді",
+    matchSubmitted: "Байланысу өтінімі жіберілді",
+    matchUnlocked: "Өтінім мақұлданып, байланыс ашылды",
+    licenseApproved: "Серіктестік өтінімі мақұлданды",
+    demoReset: "Демо қалпына келтірілді"
+  }
+} as const;
+
+const ky = {
+  meta: {
+    localeName: "Кыргызча",
+    localeNotice: "Beta котормо: негизги интерфейс кыргызчага которулду. Лицензия жана укуктук терминдер ишке киргизүүдөн мурун жергиликтүү адистер тарабынан текшерилиши керек."
+  },
+  nav: {
+    home: "Башкы бет",
+    resources: "Ресурстар",
+    publish: "Ресурс жарыялоо",
+    demand: "Талап жөнөтүү",
+    license: "Лицензия кызматташтыгы",
+    dashboard: "Кабинет",
+    admin: "Админ панель",
+    login: "Кирүү",
+    register: "Катталуу"
+  },
+  common: {
+    search: "Издөө",
+    viewAll: "Бардык ресурстар",
+    apply: "Байланышууга өтүнмө",
+    submitReview: "Текшерүүгө жөнөтүү",
+    approved: "Бекитилди",
+    pending: "Күтүүдө",
+    rejected: "Четке кагылды",
+    needsMoreInfo: "Кошумча маалымат керек",
+    featured: "Сунушталган",
+    highRisk: "Жогорку тобокелдик",
+    contacted: "Байланыш түзүлдү",
+    contactManaged: "Байланыш платформада сакталат",
+    manualReview: "Кол менен текшерүү",
+    available: "Өтүнмө берүүгө болот",
+    language: "Тил",
+    approveUnlock: "Бекитүү жана ачуу",
+    resetDemo: "Демону баштапкы абалга келтирүү"
+  },
+  home: {
+    badge: "Борбор Азиядагы кытай бизнес ресурстары платформасы",
+    titleA: "Борбор Азиядагы",
+    titleB: "бизнес ресурстарды байланыштыруу",
+    subtitle: "Ресурс, өнөктөш, канал жана лицензия табуу үчүн текшерилген платформа",
+    searchPlaceholder: "Ресурс, тармак, шаар, лицензия, бажы, логистика издөө",
+    postResource: "Ресурс жарыялоо",
+    findResource: "Ресурс издөө",
+    licenseChannel: "Алкоголь жана тамеки лицензия каналы",
+    trust: ["Борбор Азиянын 5 өлкөсү", "Кол менен текшерүү", "Байланыш бекитилгенден кийин ачылат", "Көп тилдүү кызмат"],
+    featuredTitle: "Сунушталган ресурстар",
+    categoriesTitle: "Популярдуу категориялар"
+  },
+  resources: {
+    title: "Ресурстар залы",
+    subtitle: "Текшерилген ресурстарды көрүңүз. Байланыш маалыматтары өтүнмө бекитилгенден кийин ачылат.",
+    filters: "Чыпкалар",
+    all: "Баары",
+    searchPlaceholder: "Ачкыч сөз, өлкө, шаар, тармак",
+    foundPrefix: "Табылды",
+    foundSuffix: "ресурс"
+  },
+  detail: {
+    title: "Ресурс маалыматы / байланышуу",
+    applyTitle: "Байланышууга өтүнмө",
+    contactStatus: "Байланыш абалы",
+    contactUnlocked: "Байланыш ачылды",
+    processTitle: "Байланышуу процесси",
+    process: ["Өтүнмө жөнөтүү", "Платформа текшерүүсү", "Тараптар тастыктайт", "Байланыш ачылат"]
+  },
+  forms: {
+    publishTitle: "Ресурс жарыялоо / текшерүүгө жөнөтүү",
+    demandTitle: "Талап жөнөтүү",
+    licenseTitle: "Борбор Азия лицензия кызматташтыгы",
+    submitApplication: "Өтүнмө жөнөтүү"
+  },
+  auth: {
+    welcome: "Кош келиңиз",
+    loginButton: "Кирүү",
+    registerTitle: "Аккаунт түзүү"
+  },
+  dashboard: {
+    title: "Кабинет",
+    verificationPending: "Текшерүү күтүлүүдө",
+    stats: ["Ресурстар", "Күтүүдө", "Өтүнмөлөр", "Текшерүү"],
+    profile: "Профиль жана байланыш",
+    myResources: "Менин ресурстарым",
+    myDemands: "Менин талаптарым",
+    myMatches: "Байланыш өтүнмөлөрү",
+    view: "Көрүү"
+  },
+  admin: {
+    title: "Админ панель",
+    resourceReview: "Ресурс текшерүү",
+    matchReview: "Байланыш өтүнмөлөрү",
+    licenseReview: "Өнөктөштүк өтүнмөлөрү",
+    auditLog: "Аудит журналы",
+    noPending: "Күтүүдөгү нерсе жок"
+  },
+  toast: {
+    loggedIn: "Кирдиңиз жана кабинет ачылды",
+    registered: "Катталуу өтүнмөсү жөнөтүлдү",
+    resourceApproved: "Ресурс бекитилди",
+    matchSubmitted: "Байланыш өтүнмөсү жөнөтүлдү",
+    matchUnlocked: "Байланыш ачылды",
+    demoReset: "Демо калыбына келтирилди"
+  }
+} as const;
+
+const tg = {
+  meta: {
+    localeName: "Тоҷикӣ",
+    localeNotice: "Тарҷумаи Beta: интерфейси асосӣ тоҷикӣ шуд. Истилоҳҳои иҷозатнома ва ҳуқуқӣ пеш аз нашр бояд аз ҷониби мутахассисони маҳаллӣ санҷида шаванд."
+  },
+  nav: {
+    home: "Асосӣ",
+    resources: "Захираҳо",
+    publish: "Ҷойгир кардани захира",
+    demand: "Ирсоли дархост",
+    license: "Ҳамкории иҷозатнома",
+    dashboard: "Кабинет",
+    admin: "Панели админ",
+    login: "Воридшавӣ",
+    register: "Сабти ном"
+  },
+  common: {
+    search: "Ҷустуҷӯ",
+    viewAll: "Ҳамаи захираҳо",
+    apply: "Дархости пайвастшавӣ",
+    submitReview: "Ба санҷиш фиристодан",
+    approved: "Тасдиқ шуд",
+    pending: "Дар интизорӣ",
+    rejected: "Рад шуд",
+    needsMoreInfo: "Маълумоти иловагӣ лозим",
+    featured: "Тавсияшуда",
+    highRisk: "Хавфи баланд",
+    contacted: "Тамос гирифта шуд",
+    contactManaged: "Тамос дар платформа нигоҳдорӣ мешавад",
+    manualReview: "Санҷиши дастӣ",
+    available: "Дархост мумкин",
+    language: "Забон",
+    approveUnlock: "Тасдиқ ва кушодан",
+    resetDemo: "Барқарор кардани демо"
+  },
+  home: {
+    badge: "Платформаи захираҳои тиҷорати чинӣ дар Осиёи Марказӣ",
+    titleA: "Пайваст кардани",
+    titleB: "захираҳои тиҷоратӣ",
+    subtitle: "Платформа барои ёфтани захира, шарик, канал ва иҷозатнома",
+    searchPlaceholder: "Ҷустуҷӯи захира, соҳа, шаҳр, иҷозатнома, гумрук, логистика",
+    postResource: "Ҷойгир кардани захира",
+    findResource: "Ёфтани захира",
+    licenseChannel: "Канали иҷозатномаи алкогол ва тамоку",
+    trust: ["5 кишвари Осиёи Марказӣ", "Санҷиши дастӣ", "Тамос баъд аз тасдиқ кушода мешавад", "Хидмати бисёрзабона"],
+    featuredTitle: "Захираҳои тавсияшуда",
+    categoriesTitle: "Категорияҳои маъмул"
+  },
+  resources: {
+    title: "Толори захираҳо",
+    subtitle: "Захираҳои санҷидашударо бинед. Тамос баъд аз тасдиқи дархост кушода мешавад.",
+    filters: "Филтрҳо",
+    all: "Ҳама",
+    searchPlaceholder: "Калима, кишвар, шаҳр, соҳа",
+    foundPrefix: "Ёфт шуд",
+    foundSuffix: "захира"
+  },
+  detail: {
+    title: "Тафсилоти захира / пайвастшавӣ",
+    applyTitle: "Дархости пайвастшавӣ",
+    contactStatus: "Ҳолати тамос",
+    contactUnlocked: "Тамос кушода шуд",
+    processTitle: "Раванди пайвастшавӣ",
+    process: ["Ирсоли дархост", "Санҷиши платформа", "Тасдиқи тарафҳо", "Кушодани тамос"]
+  },
+  forms: {
+    publishTitle: "Ҷойгир кардани захира / ба санҷиш фиристодан",
+    demandTitle: "Ирсоли дархост",
+    licenseTitle: "Ҳамкории иҷозатнома дар Осиёи Марказӣ",
+    submitApplication: "Ирсоли ариза"
+  },
+  auth: { welcome: "Хуш омадед", loginButton: "Ворид шудан", registerTitle: "Эҷоди ҳисоб" },
+  dashboard: {
+    title: "Кабинет",
+    verificationPending: "Санҷиш дар интизорӣ",
+    stats: ["Захираҳо", "Интизорӣ", "Дархостҳо", "Санҷиш"],
+    profile: "Профил ва тамос",
+    myResources: "Захираҳои ман",
+    myDemands: "Дархостҳои ман",
+    myMatches: "Дархостҳои пайвастшавӣ",
+    view: "Дидан"
+  },
+  admin: {
+    title: "Панели админ",
+    resourceReview: "Санҷиши захира",
+    matchReview: "Дархостҳои пайвастшавӣ",
+    licenseReview: "Дархостҳои ҳамкорӣ",
+    auditLog: "Журнали аудит",
+    noPending: "Дархости интизорӣ нест"
+  },
+  toast: {
+    loggedIn: "Ворид шудед ва кабинет кушода шуд",
+    registered: "Сабти ном фиристода шуд",
+    resourceApproved: "Захира тасдиқ шуд",
+    matchSubmitted: "Дархости пайвастшавӣ фиристода шуд",
+    matchUnlocked: "Тамос кушода шуд",
+    demoReset: "Демо барқарор шуд"
+  }
+} as const;
+
+const tk = {
+  meta: {
+    localeName: "Türkmençe",
+    localeNotice: "Beta terjime: esasy interfeýs türkmençeleşdirildi. Lisenziýa we hukuk terminleri işe goýbermezden öň ýerli hünärmenler tarapyndan barlanmaly."
+  },
+  nav: {
+    home: "Baş sahypa",
+    resources: "Resurslar",
+    publish: "Resurs ýerleşdir",
+    demand: "Talap iber",
+    license: "Lisenziýa hyzmatdaşlygy",
+    dashboard: "Kabinet",
+    admin: "Admin panel",
+    login: "Giriş",
+    register: "Hasaba al"
+  },
+  common: {
+    search: "Gözleg",
+    viewAll: "Ähli resurslar",
+    apply: "Baglanyşyk arza",
+    submitReview: "Barlaga iber",
+    approved: "Tassyklandy",
+    pending: "Garaşylýar",
+    rejected: "Ret edildi",
+    needsMoreInfo: "Goşmaça maglumat gerek",
+    featured: "Maslahat berlen",
+    highRisk: "Ýokary töwekgelçilik",
+    contacted: "Habarlaşyldy",
+    contactManaged: "Kontakt platformada saklanýar",
+    manualReview: "El bilen barlag",
+    available: "Arza mümkin",
+    language: "Dil",
+    approveUnlock: "Tassykla we aç",
+    resetDemo: "Demony dikelt"
+  },
+  home: {
+    badge: "Merkezi Aziýadaky hytaý biznes resurs platformasy",
+    titleA: "Merkezi Aziýada",
+    titleB: "biznes resurslary baglamak",
+    subtitle: "Resurs, hyzmatdaş, kanal we lisenziýa tapmak üçin barlagly platforma",
+    searchPlaceholder: "Resurs, pudak, şäher, lisenziýa, gümrük, logistika gözle",
+    postResource: "Resurs ýerleşdir",
+    findResource: "Resurs tap",
+    licenseChannel: "Alkogol we temmäki lisenziýa kanaly",
+    trust: ["Merkezi Aziýanyň 5 ýurdy", "El bilen barlag", "Kontakt tassyklamadan soň açylýar", "Köp dilli hyzmat"],
+    featuredTitle: "Maslahat berlen resurslar",
+    categoriesTitle: "Meşhur kategoriýalar"
+  },
+  resources: {
+    title: "Resurs zaly",
+    subtitle: "Barlanan resurslary görüň. Kontakt arza tassyklangandan soň açylýar.",
+    filters: "Filtrler",
+    all: "Ählisi",
+    searchPlaceholder: "Açar söz, ýurt, şäher, pudak",
+    foundPrefix: "Tapylan",
+    foundSuffix: "resurs"
+  },
+  detail: {
+    title: "Resurs jikme-jigi / baglanyşyk",
+    applyTitle: "Baglanyşyk arza",
+    contactStatus: "Kontakt ýagdaýy",
+    contactUnlocked: "Kontakt açyldy",
+    processTitle: "Baglanyşyk prosesi",
+    process: ["Arza iber", "Platforma barlagy", "Taraplar tassyklaýar", "Kontakt açylýar"]
+  },
+  forms: {
+    publishTitle: "Resurs ýerleşdir / barlaga iber",
+    demandTitle: "Talap iber",
+    licenseTitle: "Merkezi Aziýa lisenziýa hyzmatdaşlygy",
+    submitApplication: "Arza iber"
+  },
+  auth: { welcome: "Hoş geldiňiz", loginButton: "Giriş", registerTitle: "Hasap döret" },
+  dashboard: {
+    title: "Kabinet",
+    verificationPending: "Barlag garaşylýar",
+    stats: ["Resurslar", "Garaşylýar", "Arzalar", "Barlag"],
+    profile: "Profil we kontakt",
+    myResources: "Meniň resurslarym",
+    myDemands: "Meniň talaplarym",
+    myMatches: "Baglanyşyk arzalary",
+    view: "Gör"
+  },
+  admin: {
+    title: "Admin panel",
+    resourceReview: "Resurs barlagy",
+    matchReview: "Baglanyşyk arzalary",
+    licenseReview: "Hyzmatdaşlyk arzalary",
+    auditLog: "Audit žurnaly",
+    noPending: "Garaşylýan zat ýok"
+  },
+  toast: {
+    loggedIn: "Girdiňiz we kabinet açyldy",
+    registered: "Hasaba alyş arzasy iberildi",
+    resourceApproved: "Resurs tassyklandy",
+    matchSubmitted: "Baglanyşyk arzasy iberildi",
+    matchUnlocked: "Kontakt açyldy",
+    demoReset: "Demo dikeldildi"
+  }
+} as const;
+
+const ru = {
+  meta: {
+    localeName: "Русский",
+    localeNotice: "Beta-перевод: основной интерфейс переведен на русский. Термины по лицензиям, комплаенсу и праву нужно проверить перед запуском."
+  },
+  nav: {
+    home: "Главная",
+    resources: "Ресурсы",
+    publish: "Разместить ресурс",
+    demand: "Подать запрос",
+    license: "Лицензии",
+    dashboard: "Кабинет",
+    admin: "Админ-панель",
+    login: "Войти",
+    register: "Регистрация"
+  },
+  common: {
+    search: "Поиск",
+    viewAll: "Все ресурсы",
+    apply: "Запросить контакт",
+    submit: "Отправить",
+    submitReview: "Отправить на проверку",
+    saveDraft: "Сохранить черновик",
+    approved: "Одобрено",
+    pending: "На проверке",
+    rejected: "Отклонено",
+    needsMoreInfo: "Нужны данные",
+    featured: "Рекомендовано",
+    highRisk: "Высокий риск",
+    contacted: "Связались",
+    contactManaged: "Контакты под управлением платформы",
+    manualReview: "Ручная проверка",
+    reviewed: "Проверено платформой",
+    verified: "Подтверждено",
+    recommended: "Рекомендуемое",
+    available: "Можно подать заявку",
+    close: "Закрыть",
+    approve: "Одобрить",
+    reject: "Отклонить",
+    requestInfo: "Запросить данные",
+    approveUnlock: "Одобрить и открыть",
+    resetDemo: "Сбросить демо",
+    language: "Язык"
+  },
+  home: {
+    badge: "Платформа ресурсов китайского бизнеса в Центральной Азии",
+    titleA: "Связываем бизнес-",
+    titleB: "ресурсы Центральной Азии",
+    subtitle: "Ресурсы, партнеры, каналы и лицензии в одной проверяемой платформе",
+    searchPlaceholder: "Поиск ресурсов, отраслей, городов, лицензий, таможни, логистики",
+    postResource: "Разместить ресурс",
+    findResource: "Найти ресурсы",
+    licenseChannel: "Канал лицензий на алкоголь и табак",
+    trust: ["5 стран Центральной Азии", "Ручная проверка", "Контакты открываются после одобрения", "Многоязычный сервис"],
+    featuredTitle: "Рекомендуемые ресурсы",
+    featuredSubtitle: "Проверенные ресурсы с понятной ценностью для сотрудничества",
+    categoriesTitle: "Популярные категории",
+    licenseTitle: "Редкий ресурс: лицензии на алкоголь и табак в Центральной Азии",
+    licenseSubtitle: "Открыты региональные агентства, дистрибуция, долевое партнерство и комплаенс-услуги.",
+    ctaTitle: "Ищете бизнес-ресурсы в Центральной Азии?",
+    ctaText: "Если у вас есть ресурс или нужен надежный партнер, сначала отправьте заявку на проверку платформы.",
+    reviewTime: "Первичная проверка обычно занимает 1-3 рабочих дня."
+  },
+  resources: {
+    title: "Зал ресурсов",
+    subtitle: "Просматривайте проверенные бизнес-ресурсы. Контакты открываются после одобрения заявки.",
+    filters: "Фильтры",
+    type: "Тип ресурса",
+    country: "Страна",
+    category: "Категория",
+    verification: "Проверка",
+    all: "Все",
+    supplier: "Поставщик",
+    buyer: "Покупатель",
+    license: "Лицензия / канал",
+    searchPlaceholder: "Ключевое слово, страна, город, отрасль",
+    foundPrefix: "Найдено",
+    foundSuffix: "ресурсов",
+    sort: "Сначала рекомендуемые",
+    onlyApproved: "Показываются только одобренные ресурсы",
+    empty: "Нет подходящих одобренных ресурсов"
+  },
+  detail: {
+    title: "Детали ресурса / запрос контакта",
+    subtitle: "Контакты скрыты и открываются после одобрения заявки.",
+    keyResource: "Ключевой ресурс",
+    industry: "Отрасль",
+    cooperation: "Тип сотрудничества",
+    target: "Подходит для",
+    description: "Описание",
+    advantages: "Преимущества",
+    files: "Предпросмотр документов",
+    applyTitle: "Запросить контакт",
+    applyText: "Для защиты сторон контакты управляются платформой. Администратор проверит ваш запрос.",
+    applyPlaceholder: "Опишите ваши ресурсы, каналы и намерение сотрудничества",
+    contactStatus: "Статус контактов",
+    phoneLocked: "Телефон: откроется после одобрения",
+    emailLocked: "Email: откроется после одобрения",
+    wechatLocked: "WeChat: откроется после одобрения",
+    contactUnlocked: "Контакты открыты",
+    processTitle: "Процесс подключения",
+    process: ["Отправка заявки", "Проверка платформой", "Подтверждение сторон", "Открытие контактов"],
+    submitted: "Заявка отправлена."
+  },
+  forms: {
+    publishTitle: "Разместить ресурс / отправить на проверку",
+    publishSubtitle: "Заполните данные ресурса. После одобрения он появится в зале ресурсов.",
+    steps: ["Основное", "Сотрудничество", "Документы", "Контакты", "Подтверждение"],
+    demandTitle: "Подать запрос",
+    demandSubtitle: "Опишите, что ищете, и администратор поможет с подбором.",
+    licenseTitle: "Партнерство по лицензиям в Центральной Азии",
+    licenseSubtitle: "Для партнеров с каналами, капиталом или командой.",
+    partnerApply: "Заявка на партнерство",
+    submitApplication: "Отправить заявку",
+    submittedResource: "Ресурс отправлен на проверку.",
+    submittedDemand: "Запрос отправлен.",
+    submittedLicense: "Заявка на партнерство отправлена."
+  },
+  auth: {
+    loginHero: "Войдите, чтобы подавать заявки, размещать ресурсы и отслеживать проверку",
+    welcome: "Добро пожаловать",
+    loginSubtitle: "После входа можно подавать заявки, управлять ресурсами и смотреть статусы.",
+    emailLogin: "Email вход",
+    phoneOtp: "SMS-код",
+    loginButton: "Войти",
+    registerTitle: "Создать аккаунт",
+    registerButton: "Зарегистрироваться и пройти проверку",
+    noAccount: "Нет аккаунта?",
+    createAccount: "Зарегистрироваться",
+    hasAccount: "Уже есть аккаунт?",
+    goLogin: "Войти"
+  },
+  dashboard: {
+    title: "Кабинет",
+    subtitle: "Управляйте ресурсами, запросами, заявками и профилем проверки.",
+    verificationPending: "Проверка ожидается",
+    stats: ["Ресурсы", "На проверке", "Заявки", "Проверка"],
+    profile: "Профиль и контакты"
+  },
+  admin: {
+    title: "Админ-панель",
+    subtitle: "Проверяйте ресурсы, запросы, лицензии и заявки. Все действия пишутся в аудит.",
+    resourceReview: "Проверка ресурсов",
+    matchReview: "Заявки на контакт",
+    licenseReview: "Партнерские заявки",
+    auditLog: "Журнал аудита",
+    users: "Пользователи",
+    noPending: "Нет ожидающих заявок"
+  }
+} as const;
+
+export const messages: Record<Locale, Messages> = {
+  "zh-CN": zhCN,
+  en,
+  uz: mergeMessages(betaFallbackMessages(en, "UZ Beta"), uz),
+  kk: mergeMessages(betaFallbackMessages(en, "KZ Beta"), kk),
+  ky: mergeMessages(betaFallbackMessages(en, "KG Beta"), ky),
+  tg: mergeMessages(betaFallbackMessages(en, "TJ Beta"), tg),
+  tk: mergeMessages(betaFallbackMessages(en, "TM Beta"), tk),
+  ru: mergeMessages(betaFallbackMessages(en, "RU Beta"), ru)
+};

@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SUPPLIER         @map("supplier")
+  BUYER            @map("buyer")
+  SERVICE_PROVIDER @map("service_provider")
+  ADMIN            @map("admin")
+}
+
+enum VerifyStatus {
+  UNVERIFIED       @map("unverified")
+  PENDING          @map("pending")
+  VERIFIED         @map("verified")
+  REJECTED         @map("rejected")
+  NEEDS_MORE_INFO  @map("needs_more_info")
+}
+
+enum ResourceType {
+  SUPPLIER      @map("supplier")
+  BUYER         @map("buyer")
+  QUALIFICATION @map("qualification")
+  CHANNEL       @map("channel")
+}
+
+enum ResourceStatus {
+  PENDING         @map("pending")
+  APPROVED        @map("approved")
+  REJECTED        @map("rejected")
+  NEEDS_MORE_INFO @map("needs_more_info")
+  FEATURED        @map("featured")
+  HIGH_RISK       @map("high_risk")
+}
+
+enum ReviewStatus {
+  PENDING         @map("pending")
+  APPROVED        @map("approved")
+  REJECTED        @map("rejected")
+  NEEDS_MORE_INFO @map("needs_more_info")
+}
+
+enum MatchRequestStatus {
+  PENDING          @map("pending")
+  APPROVED         @map("approved")
+  REJECTED         @map("rejected")
+  CONTACT_UNLOCKED @map("contact_unlocked")
+}
+
+enum LicenseApplicationStatus {
+  PENDING         @map("pending")
+  CONTACTED       @map("contacted")
+  APPROVED        @map("approved")
+  REJECTED        @map("rejected")
+  NEEDS_MORE_INFO @map("needs_more_info")
+}
+
+enum VerificationType {
+  PERSONAL @map("personal")
+  COMPANY  @map("company")
+  LICENSE  @map("license")
+}
+
+enum AuditTargetType {
+  RESOURCE            @map("resource")
+  DEMAND              @map("demand")
+  MATCH_REQUEST       @map("match_request")
+  LICENSE_APPLICATION @map("license_application")
+  VERIFICATION        @map("verification")
+  USER                @map("user")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String?
+  email        String       @unique
+  passwordHash String
+  phone        String?
+  telegram     String?
+  whatsapp     String?
+  wechat       String?
+  country      String?
+  city         String?
+  companyName  String?
+  role         UserRole     @default(BUYER)
+  verifyStatus VerifyStatus @default(UNVERIFIED)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  resources                   Resource[]
+  demands                     Demand[]
+  matchRequests               MatchRequest[]       @relation("MatchRequester")
+  licenseApplications         LicenseApplication[]
+  verifications               Verification[]
+  uploadedFiles               UploadFile[]
+  adminAuditLogs              AdminAuditLog[]      @relation("AuditAdmin")
+  reviewedMatchRequests       MatchRequest[]       @relation("MatchReviewer")
+  reviewedVerifications       Verification[]       @relation("VerificationReviewer")
+
+  @@index([role])
+  @@index([verifyStatus])
+}
+
+model Resource {
+  id                 String         @id @default(cuid())
+  userId             String
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type               ResourceType   @default(SUPPLIER)
+  title              String
+  description        String
+  country            String
+  city               String?
+  category           String
+  cooperationMode    String?
+  budgetRange        String?
+  longTerm           Boolean        @default(false)
+  hasBusinessLicense Boolean        @default(false)
+  hasQualification   Boolean        @default(false)
+  contactName        String?
+  contactEmail       String?
+  contactPhone       String?
+  contactTelegram    String?
+  contactWhatsapp    String?
+  contactWechat      String?
+  status             ResourceStatus @default(PENDING)
+  isFeatured         Boolean        @default(false)
+  viewCount          Int            @default(0)
+  matchCount         Int            @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  matchRequests MatchRequest[]
+
+  @@index([userId])
+  @@index([status, isFeatured])
+  @@index([type])
+  @@index([country, city])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model Demand {
+  id                 String       @id @default(cuid())
+  userId             String
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String
+  description        String
+  country            String
+  city               String?
+  category           String
+  budgetRange        String?
+  cooperationMode    String?
+  urgency            String?
+  contactName        String?
+  contactEmail       String?
+  contactPhone       String?
+  contactTelegram    String?
+  contactWhatsapp    String?
+  contactWechat      String?
+  status             ReviewStatus @default(PENDING)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([country, city])
+  @@index([category])
+  @@index([createdAt])
+}
+
+model MatchRequest {
+  id                String             @id @default(cuid())
+  resourceId        String
+  resource          Resource           @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  requesterId       String
+  requester         User               @relation("MatchRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  message           String
+  status            MatchRequestStatus @default(PENDING)
+  adminNote         String?
+  contactUnlockedAt DateTime?
+  reviewedBy        String?
+  reviewer          User?              @relation("MatchReviewer", fields: [reviewedBy], references: [id])
+  reviewedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([resourceId, requesterId])
+  @@index([status])
+  @@index([resourceId])
+  @@index([requesterId])
+  @@index([reviewedBy])
+  @@index([createdAt])
+}
+
+model LicenseApplication {
+  id              String                   @id @default(cuid())
+  userId          String
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  country         String
+  city            String?
+  companyName     String?
+  channelInfo     String?
+  capitalAbility  String?
+  cooperationType String
+  hasWarehouse    Boolean                  @default(false)
+  hasStore        Boolean                  @default(false)
+  hasTeam         Boolean                  @default(false)
+  contactEmail    String?
+  contactPhone    String?
+  contactTelegram String?
+  contactWhatsapp String?
+  contactWechat   String?
+  note            String?
+  status          LicenseApplicationStatus @default(PENDING)
+  adminNote       String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([country, city])
+  @@index([createdAt])
+}
+
+model Verification {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        VerificationType
+  documentUrl String?
+  status      ReviewStatus     @default(PENDING)
+  adminNote   String?
+  reviewedBy  String?
+  reviewer    User?            @relation("VerificationReviewer", fields: [reviewedBy], references: [id])
+  reviewedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([userId, type])
+  @@index([status])
+  @@index([reviewedBy])
+}
+
+model AdminAuditLog {
+  id         String          @id @default(cuid())
+  adminId    String
+  admin      User            @relation("AuditAdmin", fields: [adminId], references: [id])
+  targetType AuditTargetType
+  targetId   String
+  action     String
+  note       String?
+  createdAt  DateTime        @default(now())
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model UploadFile {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetType String
+  targetId   String
+  fileUrl    String
+  fileName   String
+  mimeType   String?
+  size       Int?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([targetType, targetId])
+}
