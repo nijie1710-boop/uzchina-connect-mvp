@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { randomBytes, scryptSync } from "node:crypto";
-import {
+import prismaClient from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const {
   AuditTargetType,
   LicenseApplicationStatus,
   MatchRequestStatus,
@@ -11,8 +14,7 @@ import {
   UserRole,
   VerificationType,
   VerifyStatus
-} from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+} = prismaClient;
 
 const databaseUrl =
   process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/uzchina_connect?schema=public";
