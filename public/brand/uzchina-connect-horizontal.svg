@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-label="UzChina Connect">
+  <rect width="360" height="96" rx="16" fill="#FFFFFF"/>
+  <path d="M24 15V51c0 24 18 39 39 30 13-6 21-17 21-33" fill="none" stroke="#061F43" stroke-linecap="round" stroke-linejoin="round" stroke-width="14"/>
+  <path d="M79 34a24 24 0 1 0 0 32" fill="none" stroke="#D6A84F" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"/>
+  <path d="M75 48 93 35v26Z" fill="#0F766E"/>
+  <circle cx="67" cy="48" r="4" fill="#FFFFFF" opacity="0.95"/>
+  <line x1="126" y1="20" x2="126" y2="76" stroke="#CBD5E1" stroke-width="2"/>
+  <text x="150" y="45" fill="#061F43" font-family="Inter, Arial, sans-serif" font-size="31" font-weight="800" letter-spacing="-0.5">UzChina</text>
+  <text x="150" y="68" fill="#0F766E" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" letter-spacing="6">Connect</text>
+</svg>

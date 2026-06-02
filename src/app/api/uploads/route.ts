@@ -91,3 +91,44 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Upload failed" }, { status: 400 });
   }
 }
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = await requireUser();
+    const targetType = request.nextUrl.searchParams.get("targetType")?.trim();
+    const targetId = request.nextUrl.searchParams.get("targetId")?.trim();
+    const isAdmin = user.role === "ADMIN";
+
+    if (targetType && !allowedTargetTypes.has(targetType)) {
+      return NextResponse.json({ error: "Invalid upload target type." }, { status: 400 });
+    }
+
+    if (!isAdmin && targetType && targetId && !(await ownsTarget(user.id, targetType, targetId))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const files = await prisma.uploadFile.findMany({
+      where: {
+        ...(isAdmin ? {} : { userId: user.id }),
+        ...(targetType ? { targetType } : {}),
+        ...(targetId ? { targetId } : {})
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        targetType: true,
+        targetId: true,
+        fileUrl: true,
+        fileName: true,
+        mimeType: true,
+        size: true,
+        createdAt: true
+      }
+    });
+
+    return NextResponse.json(files);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+}

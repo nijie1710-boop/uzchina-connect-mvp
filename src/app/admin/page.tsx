@@ -49,6 +49,18 @@ type AdminPayload = {
   logs: AuditLogRecord[];
 };
 
+const ADMIN_PAGE_SIZE = 8;
+const initialPages: Record<AdminTab, number> = {
+  overview: 1,
+  resources: 1,
+  demands: 1,
+  matches: 1,
+  licenses: 1,
+  verifications: 1,
+  users: 1,
+  audit: 1
+};
+
 export default function AdminPage() {
   const { t } = useI18n();
   const router = useRouter();
@@ -64,6 +76,8 @@ export default function AdminPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
+  const [pageByTab, setPageByTab] = useState<Record<AdminTab, number>>(initialPages);
+  const normalizedQuery = query.trim().toLowerCase();
 
   const loadAdmin = useCallback(async () => {
     try {
@@ -93,6 +107,8 @@ export default function AdminPage() {
 
   const noteFor = (id: string) => notes[id]?.trim() || "";
   const setNote = (id: string, value: string) => setNotes((current) => ({ ...current, [id]: value }));
+  const pageFor = (key: AdminTab) => pageByTab[key] ?? 1;
+  const setPage = (key: AdminTab, value: number) => setPageByTab((current) => ({ ...current, [key]: value }));
 
   const runReview = async (result: Promise<{ ok: boolean; error?: string }>, successText: string) => {
     const resolved = await result;
@@ -115,7 +131,6 @@ export default function AdminPage() {
     ["audit", t("admin.auditLog"), ShieldAlert]
   ];
 
-  const normalizedQuery = query.trim().toLowerCase();
   const includesQuery = (parts: Array<string | null | undefined>) => {
     if (!normalizedQuery) return true;
     return parts.some((part) => part?.toLowerCase().includes(normalizedQuery));
@@ -165,6 +180,20 @@ export default function AdminPage() {
   const filteredAuditLogs = auditLogs.filter((log) =>
     includesQuery([log.action, log.targetType, log.targetTitle, log.note, log.adminName])
   );
+  const resourcePage = pageFor("resources");
+  const demandPage = pageFor("demands");
+  const matchPage = pageFor("matches");
+  const licensePage = pageFor("licenses");
+  const verificationPage = pageFor("verifications");
+  const userPage = pageFor("users");
+  const auditPage = pageFor("audit");
+  const visibleResources = paginate(filteredResources, resourcePage, ADMIN_PAGE_SIZE);
+  const visibleDemands = paginate(filteredDemands, demandPage, ADMIN_PAGE_SIZE);
+  const visibleMatches = paginate(filteredMatches, matchPage, ADMIN_PAGE_SIZE);
+  const visibleLicenses = paginate(filteredLicenses, licensePage, ADMIN_PAGE_SIZE);
+  const visibleVerifications = paginate(filteredVerifications, verificationPage, ADMIN_PAGE_SIZE);
+  const visibleUsers = paginate(filteredUsers, userPage, ADMIN_PAGE_SIZE);
+  const visibleAuditLogs = paginate(filteredAuditLogs, auditPage, ADMIN_PAGE_SIZE);
 
   return (
     <div className="mobile-screen">
@@ -176,7 +205,10 @@ export default function AdminPage() {
             {tabs.map(([key, label, Icon]) => (
               <button
                 key={key}
-                onClick={() => setTab(key)}
+                onClick={() => {
+                  setTab(key);
+                  setPage(key, 1);
+                }}
                 className={tab === key ? "flex h-11 items-center gap-3 rounded-xl bg-white/[0.12] px-3 text-left text-sm font-black text-gold" : "flex h-11 items-center gap-3 rounded-xl px-3 text-left text-sm font-black text-white/70 hover:bg-white/[0.08]"}
               >
                 <Icon className="h-4 w-4" />
@@ -194,7 +226,10 @@ export default function AdminPage() {
               {tabs.map(([key, label]) => (
                 <button
                   key={key}
-                  onClick={() => setTab(key)}
+                  onClick={() => {
+                    setTab(key);
+                    setPage(key, 1);
+                  }}
                   className={tab === key ? "rounded-full bg-navy-700 px-4 py-2 text-xs font-black text-white" : "rounded-full border border-line bg-white px-4 py-2 text-xs font-black text-slate-600"}
                 >
                   {label}
@@ -205,7 +240,10 @@ export default function AdminPage() {
               <Search className="h-4 w-4 text-slate-400" />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPageByTab(initialPages);
+                }}
                 placeholder={t("admin.searchPlaceholder")}
                 className="h-full flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"
               />
@@ -237,7 +275,7 @@ export default function AdminPage() {
 
           {tab === "resources" ? (
             <ReviewPanel title={t("admin.resourceReview")} empty={!filteredResources.length}>
-              {filteredResources.map((resource) => (
+              {visibleResources.map((resource) => (
                 <ReviewItem
                   key={resource.id}
                   title={resourceTitle(resource, t)}
@@ -257,12 +295,13 @@ export default function AdminPage() {
                   }
                 />
               ))}
+              <PageControls total={filteredResources.length} page={resourcePage} pageSize={ADMIN_PAGE_SIZE} onPage={(next) => setPage("resources", next)} />
             </ReviewPanel>
           ) : null}
 
           {tab === "demands" ? (
             <ReviewPanel title={t("admin.demandReview")} empty={!filteredDemands.length}>
-              {filteredDemands.map((demand) => (
+              {visibleDemands.map((demand) => (
                 <ReviewItem
                   key={demand.id}
                   title={readText(demand.title, demand.titleKey, t)}
@@ -280,12 +319,13 @@ export default function AdminPage() {
                   }
                 />
               ))}
+              <PageControls total={filteredDemands.length} page={demandPage} pageSize={ADMIN_PAGE_SIZE} onPage={(next) => setPage("demands", next)} />
             </ReviewPanel>
           ) : null}
 
           {tab === "matches" ? (
             <ReviewPanel title={t("admin.matchReview")} empty={!filteredMatches.length}>
-              {filteredMatches.map((request) => (
+              {visibleMatches.map((request) => (
                 <ReviewItem
                   key={request.id}
                   title={resourceTitle(request.resource, t)}
@@ -303,12 +343,13 @@ export default function AdminPage() {
                   }
                 />
               ))}
+              <PageControls total={filteredMatches.length} page={matchPage} pageSize={ADMIN_PAGE_SIZE} onPage={(next) => setPage("matches", next)} />
             </ReviewPanel>
           ) : null}
 
           {tab === "licenses" ? (
             <ReviewPanel title={t("admin.licenseReview")} empty={!filteredLicenses.length}>
-              {filteredLicenses.map((application) => (
+              {visibleLicenses.map((application) => (
                 <ReviewItem
                   key={application.id}
                   title={readText(application.applicantName, application.applicantNameKey, t)}
@@ -327,12 +368,13 @@ export default function AdminPage() {
                   }
                 />
               ))}
+              <PageControls total={filteredLicenses.length} page={licensePage} pageSize={ADMIN_PAGE_SIZE} onPage={(next) => setPage("licenses", next)} />
             </ReviewPanel>
           ) : null}
 
           {tab === "verifications" ? (
             <ReviewPanel title={t("admin.verificationReview")} empty={!filteredVerifications.length}>
-              {filteredVerifications.map((verification) => (
+              {visibleVerifications.map((verification) => (
                 <ReviewItem
                   key={verification.id}
                   title={verification.userName ?? verification.userId}
@@ -350,13 +392,14 @@ export default function AdminPage() {
                   }
                 />
               ))}
+              <PageControls total={filteredVerifications.length} page={verificationPage} pageSize={ADMIN_PAGE_SIZE} onPage={(next) => setPage("verifications", next)} />
             </ReviewPanel>
           ) : null}
 
           {tab === "users" ? (
             <section className="panel mt-6 overflow-hidden">
               <SectionTitle title={t("admin.userManagement")} />
-              {filteredUsers.length ? filteredUsers.map((user) => (
+              {filteredUsers.length ? visibleUsers.map((user) => (
                 <div key={user.id} className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_220px] lg:items-center">
                   <b>{user.name ?? user.email}</b>
                   <span className="text-slate-500">{user.email}</span>
@@ -368,13 +411,15 @@ export default function AdminPage() {
                   </div>
                 </div>
               )) : <EmptyState />}
+              <PageControls total={filteredUsers.length} page={userPage} pageSize={ADMIN_PAGE_SIZE} onPage={(next) => setPage("users", next)} />
             </section>
           ) : null}
 
           {tab === "audit" ? (
             <section className="panel mt-6 overflow-hidden">
               <SectionTitle title={t("admin.auditLog")} />
-              {filteredAuditLogs.length ? filteredAuditLogs.map((log) => <AuditRow key={log.id} log={log} />) : <EmptyState />}
+              {filteredAuditLogs.length ? visibleAuditLogs.map((log) => <AuditRow key={log.id} log={log} />) : <EmptyState />}
+              <PageControls total={filteredAuditLogs.length} page={auditPage} pageSize={ADMIN_PAGE_SIZE} onPage={(next) => setPage("audit", next)} />
             </section>
           ) : null}
         </main>
@@ -438,7 +483,8 @@ function ReviewItem({
   onNote: (value: string) => void;
   actions: React.ReactNode;
 }) {
-  const { t } = useI18n();
+  const { t, tArray } = useI18n();
+  const noteTemplates = tArray("admin.noteTemplates");
   return (
     <div className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.5fr_1.3fr_120px_1.6fr_260px] lg:items-center">
       <b>{title}</b>
@@ -452,8 +498,66 @@ function ReviewItem({
           placeholder={notePlaceholder}
           className="field min-h-16 w-full resize-none py-2 text-xs"
         />
+        <div className="flex flex-wrap gap-1">
+          {noteTemplates.map((template) => (
+            <button
+              key={template}
+              type="button"
+              onClick={() => onNote(template)}
+              className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-500 hover:bg-slate-200"
+            >
+              {template}
+            </button>
+          ))}
+        </div>
       </label>
       <div className="flex flex-wrap gap-2">{actions}</div>
+    </div>
+  );
+}
+
+function paginate<T>(items: T[], page: number, pageSize: number) {
+  const safePage = Math.max(page, 1);
+  return items.slice((safePage - 1) * pageSize, safePage * pageSize);
+}
+
+function PageControls({
+  total,
+  page,
+  pageSize,
+  onPage
+}: {
+  total: number;
+  page: number;
+  pageSize: number;
+  onPage: (page: number) => void;
+}) {
+  const { t } = useI18n();
+  const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+
+  if (total <= pageSize) return null;
+
+  return (
+    <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs font-black text-slate-500">
+      <span>{t("admin.pageSummary", { page, totalPages, total })}</span>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => onPage(Math.max(page - 1, 1))}
+          className="rounded-xl border border-line bg-white px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {t("admin.prevPage")}
+        </button>
+        <button
+          type="button"
+          disabled={page >= totalPages}
+          onClick={() => onPage(Math.min(page + 1, totalPages))}
+          className="rounded-xl border border-line bg-white px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {t("admin.nextPage")}
+        </button>
+      </div>
     </div>
   );
 }

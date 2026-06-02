@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 112" role="img" aria-label="Verified by UzChina Connect">
+  <rect x="4" y="4" width="352" height="104" rx="24" fill="#FFFFFF" stroke="#D6A84F" stroke-width="4"/>
+  <path d="M56 20 88 32v24c0 21-14 32-32 40-18-8-32-19-32-40V32Z" fill="#061F43"/>
+  <path d="m43 55 12 12 24-28" fill="none" stroke="#D6A84F" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+  <text x="112" y="47" fill="#061F43" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800">Verified by</text>
+  <text x="112" y="76" fill="#0F766E" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="900">UzChina Connect</text>
+</svg>

@@ -366,6 +366,13 @@ cd /var/www/uzchina-connect-mvp
 APP_DIR=/var/www/uzchina-connect-mvp PM2_APP_NAME=uzchina-connect pnpm deploy:production
 ```
 
+当前新加坡服务器如果使用 `/opt/uzchina-connect-mvp` 和端口 `3001`，执行：
+
+```bash
+cd /opt/uzchina-connect-mvp
+APP_DIR=/opt/uzchina-connect-mvp PM2_APP_NAME=uzchina-connect pnpm deploy:production
+```
+
 ### 9. 数据库备份和恢复
 
 仓库提供了可复用备份和恢复脚本：
@@ -383,16 +390,17 @@ sudo chown -R $USER:$USER /var/backups/uzchina-connect
 BACKUP_DIR=/var/backups/uzchina-connect BACKUP_RETENTION_DAYS=14 pnpm backup:postgres
 ```
 
-配置每日自动备份：
+配置每日自动备份，推荐直接使用安装脚本：
 
 ```bash
-sudo tee /etc/cron.d/uzchina-connect-backup >/dev/null <<'EOF'
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-15 3 * * * root APP_DIR=/var/www/uzchina-connect-mvp BACKUP_DIR=/var/backups/uzchina-connect BACKUP_RETENTION_DAYS=14 /var/www/uzchina-connect-mvp/scripts/backup-postgres.sh >> /var/log/uzchina-connect-backup.log 2>&1
-EOF
-sudo chmod 644 /etc/cron.d/uzchina-connect-backup
-sudo systemctl restart cron
+sudo APP_DIR=/var/www/uzchina-connect-mvp BACKUP_DIR=/var/backups/uzchina-connect BACKUP_RETENTION_DAYS=14 pnpm backup:install-cron
+```
+
+当前新加坡服务器如果使用 `/opt/uzchina-connect-mvp`：
+
+```bash
+cd /opt/uzchina-connect-mvp
+sudo APP_DIR=/opt/uzchina-connect-mvp BACKUP_DIR=/var/backups/uzchina-connect BACKUP_RETENTION_DAYS=14 pnpm backup:install-cron
 ```
 
 检查备份日志：
@@ -449,16 +457,52 @@ pm2 save
 - 磁盘容量，尤其是 `/var/backups/uzchina-connect`。
 - Nginx 5xx 错误数量。
 
-### 11. 上传文件策略
+### 11. SSH 安全加固
+
+长期生产环境不建议继续使用 root 密码登录。仓库提供了 `server:harden-ssh` 脚本，执行前先准备你的本机公钥：
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+在服务器上执行：
+
+```bash
+cd /opt/uzchina-connect-mvp
+sudo DEPLOY_USER=deploy DEPLOY_PUBLIC_KEY="ssh-ed25519 ..." pnpm server:harden-ssh
+```
+
+确认新终端可以登录后，再禁用密码和 root 登录：
+
+```bash
+sudo DEPLOY_USER=deploy DEPLOY_PUBLIC_KEY="ssh-ed25519 ..." DISABLE_PASSWORD_AUTH=yes DISABLE_ROOT_LOGIN=yes pnpm server:harden-ssh
+```
+
+注意：禁用前必须确认 `deploy` 用户的 SSH key 登录可用，否则可能把自己锁在服务器外。
+
+### 12. 上传文件策略
 
 数据库已包含 `UploadFile`，当前新增 `/api/uploads` 用于登记上传文件元数据。生产环境不建议把认证资料、许可证材料直接写入服务器磁盘，建议使用对象存储：
 
 - Vultr Object Storage、S3、Cloudflare R2 或同类服务。
 - 前端先上传到对象存储，再把 HTTPS 文件 URL、文件名、大小、归属对象写入 `/api/uploads`。
 - `/api/uploads` 会校验登录状态、目标归属权，生产环境要求 `fileUrl` 使用 HTTPS。
+- `GET /api/uploads` 可查询当前用户的上传记录，管理员可查看全部。
+- `DELETE /api/uploads/:id` 可删除本人上传记录，管理员可删除全部。
 - 文件权限建议默认为私有，通过短期签名 URL 或后台审核后再开放。
 
-### 12. 回滚说明
+### 13. 品牌资产和商标检索
+
+品牌资产位于：
+
+- `public/brand/uzchina-connect-mark.svg`
+- `public/brand/uzchina-connect-horizontal.svg`
+- `public/brand/uzchina-connect-verified-badge.svg`
+- `src/app/icon.svg`
+
+商标初筛清单位于 `docs/trademark-clearance.md`。MVP 阶段可以继续使用 `UzChina Connect`，正式注册公司、融资或提交商标前，建议由商标代理在目标国家和 Nice 类别中做正式检索。
+
+### 14. 回滚说明
 
 代码回滚：
 

@@ -2,6 +2,7 @@
 
 import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { clearSessionCookie, getCurrentUser as readCurrentUser, setSessionCookie } from "@/lib/session";
 import { hashPassword, verifyPassword } from "@/lib/password";
@@ -28,15 +29,28 @@ const roleMap: Record<NonNullable<RegisterInput["role"]>, UserRole> = {
   service_provider: UserRole.SERVICE_PROVIDER
 };
 
+async function getClientIp() {
+  const headerStore = await headers();
+  const forwardedFor = headerStore.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwardedFor || headerStore.get("x-real-ip") || "unknown";
+}
+
+function isStrongPassword(password: string) {
+  return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+}
+
 export async function register(input: RegisterInput): Promise<ActionResult<{ id: string; email: string }>> {
   try {
     const email = input.email.trim().toLowerCase();
     if (!email || !email.includes("@")) throw new Error("请输入有效邮箱。");
-    if (!input.password || input.password.length < 6) throw new Error("密码至少需要 6 位。");
+    if (!input.password || !isStrongPassword(input.password)) throw new Error("密码至少需要 8 位，并包含字母和数字。");
 
+    const clientIp = await getClientIp();
     const rateLimitKey = `register:${email}`;
     const rateLimit = checkRateLimit(rateLimitKey, { limit: 4, windowMs: 60 * 60 * 1000 });
     if (!rateLimit.ok) throw new Error(`注册尝试过多，请 ${rateLimit.retryAfterSeconds} 秒后再试。`);
+    const ipRateLimit = checkRateLimit(`register-ip:${clientIp}`, { limit: 20, windowMs: 60 * 60 * 1000 });
+    if (!ipRateLimit.ok) throw new Error(`注册尝试过多，请 ${ipRateLimit.retryAfterSeconds} 秒后再试。`);
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) throw new Error("该邮箱已注册，请直接登录。");
@@ -65,9 +79,12 @@ export async function register(input: RegisterInput): Promise<ActionResult<{ id:
 export async function login(input: LoginInput): Promise<ActionResult<{ id: string; email: string }>> {
   try {
     const email = input.email.trim().toLowerCase();
+    const clientIp = await getClientIp();
     const rateLimitKey = `login:${email}`;
     const rateLimit = checkRateLimit(rateLimitKey, { limit: 6, windowMs: 10 * 60 * 1000 });
     if (!rateLimit.ok) throw new Error(`登录尝试过多，请 ${rateLimit.retryAfterSeconds} 秒后再试。`);
+    const ipRateLimit = checkRateLimit(`login-ip:${clientIp}`, { limit: 30, windowMs: 10 * 60 * 1000 });
+    if (!ipRateLimit.ok) throw new Error(`登录尝试过多，请 ${ipRateLimit.retryAfterSeconds} 秒后再试。`);
 
     const user = await prisma.user.findUnique({
       where: { email },
