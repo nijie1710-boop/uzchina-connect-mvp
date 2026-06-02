@@ -17,7 +17,8 @@
     "restore:postgres": "bash scripts/restore-postgres.sh",
     "deploy:production": "bash scripts/deploy-production.sh",
     "backup:install-cron": "bash scripts/install-backup-cron.sh",
-    "server:harden-ssh": "bash scripts/harden-ssh.sh"
+    "server:harden-ssh": "bash scripts/harden-ssh.sh",
+    "admin:set-password": "node scripts/set-admin-password.mjs"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"

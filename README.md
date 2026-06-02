@@ -373,6 +373,15 @@ cd /opt/uzchina-connect-mvp
 APP_DIR=/opt/uzchina-connect-mvp PM2_APP_NAME=uzchina-connect pnpm deploy:production
 ```
 
+上线后立即修改默认管理员密码：
+
+```bash
+cd /opt/uzchina-connect-mvp
+ADMIN_PASSWORD='replace-with-a-new-strong-admin-password' pnpm admin:set-password
+```
+
+密码要求至少 12 位，并包含字母和数字。不要把生产管理员密码提交到 Git，也不要写进 README 或 `.env.example`。
+
 ### 9. 数据库备份和恢复
 
 仓库提供了可复用备份和恢复脚本：
