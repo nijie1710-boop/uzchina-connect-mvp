@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Check, FileClock, FileText, Handshake, LayoutDashboard, ShieldAlert, ShieldCheck, Star, Users, X } from "lucide-react";
+import { Check, FileClock, FileText, Handshake, LayoutDashboard, Search, ShieldAlert, ShieldCheck, Star, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import {
@@ -63,6 +63,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [query, setQuery] = useState("");
 
   const loadAdmin = useCallback(async () => {
     try {
@@ -100,7 +101,7 @@ export default function AdminPage() {
   };
 
   if (!stats) {
-    return <div className="page-pad text-sm font-semibold text-slate-500">{t("admin.subtitle")}</div>;
+    return <div className="page-pad text-sm font-semibold text-slate-500">{t("admin.loading")}</div>;
   }
 
   const tabs: Array<[AdminTab, string, typeof FileClock]> = [
@@ -113,6 +114,57 @@ export default function AdminPage() {
     ["users", t("admin.userManagement"), Users],
     ["audit", t("admin.auditLog"), ShieldAlert]
   ];
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const includesQuery = (parts: Array<string | null | undefined>) => {
+    if (!normalizedQuery) return true;
+    return parts.some((part) => part?.toLowerCase().includes(normalizedQuery));
+  };
+
+  const filteredResources = pendingResources.filter((resource) =>
+    includesQuery([
+      resourceTitle(resource, t),
+      resourceLocation(resource, t),
+      localizedCategory(resource, t),
+      readText(resource.ownerName, resource.ownerNameKey, t),
+      resource.status
+    ])
+  );
+  const filteredDemands = pendingDemands.filter((demand) =>
+    includesQuery([
+      readText(demand.title, demand.titleKey, t),
+      readText(demand.country, demand.countryKey, t),
+      readText(demand.city, demand.cityKey, t),
+      localizedCategory(demand, t),
+      demand.status
+    ])
+  );
+  const filteredMatches = pendingMatches.filter((request) =>
+    includesQuery([
+      resourceTitle(request.resource, t),
+      readText(request.applicantName, request.applicantNameKey, t),
+      request.intent,
+      request.status
+    ])
+  );
+  const filteredLicenses = pendingLicenses.filter((application) =>
+    includesQuery([
+      readText(application.applicantName, application.applicantNameKey, t),
+      readText(application.country, application.countryKey, t),
+      readText(application.city, application.cityKey, t),
+      readText(application.partnership, application.partnershipKey, t),
+      application.status
+    ])
+  );
+  const filteredVerifications = pendingVerifications.filter((verification) =>
+    includesQuery([verification.userName, verification.userId, verification.type, verification.status, verification.documentUrl])
+  );
+  const filteredUsers = users.filter((user) =>
+    includesQuery([user.name, user.email, user.role, user.verifyStatus])
+  );
+  const filteredAuditLogs = auditLogs.filter((log) =>
+    includesQuery([log.action, log.targetType, log.targetTitle, log.note, log.adminName])
+  );
 
   return (
     <div className="mobile-screen">
@@ -149,6 +201,15 @@ export default function AdminPage() {
                 </button>
               ))}
             </div>
+            <label className="mt-4 flex h-11 max-w-xl items-center gap-2 rounded-2xl border border-line bg-white px-4 text-sm">
+              <Search className="h-4 w-4 text-slate-400" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("admin.searchPlaceholder")}
+                className="h-full flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"
+              />
+            </label>
           </div>
 
           <StatsGrid stats={stats} />
@@ -157,7 +218,7 @@ export default function AdminPage() {
             <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_360px]">
               <div className="panel overflow-hidden">
                 <SectionTitle title={t("admin.recentAudit")} />
-                {auditLogs.slice(0, 8).map((log) => (
+                {filteredAuditLogs.slice(0, 8).map((log) => (
                   <AuditRow key={log.id} log={log} />
                 ))}
               </div>
@@ -175,8 +236,8 @@ export default function AdminPage() {
           ) : null}
 
           {tab === "resources" ? (
-            <ReviewPanel title={t("admin.resourceReview")} empty={!pendingResources.length}>
-              {pendingResources.map((resource) => (
+            <ReviewPanel title={t("admin.resourceReview")} empty={!filteredResources.length}>
+              {filteredResources.map((resource) => (
                 <ReviewItem
                   key={resource.id}
                   title={resourceTitle(resource, t)}
@@ -200,8 +261,8 @@ export default function AdminPage() {
           ) : null}
 
           {tab === "demands" ? (
-            <ReviewPanel title={t("admin.demandReview")} empty={!pendingDemands.length}>
-              {pendingDemands.map((demand) => (
+            <ReviewPanel title={t("admin.demandReview")} empty={!filteredDemands.length}>
+              {filteredDemands.map((demand) => (
                 <ReviewItem
                   key={demand.id}
                   title={readText(demand.title, demand.titleKey, t)}
@@ -223,8 +284,8 @@ export default function AdminPage() {
           ) : null}
 
           {tab === "matches" ? (
-            <ReviewPanel title={t("admin.matchReview")} empty={!pendingMatches.length}>
-              {pendingMatches.map((request) => (
+            <ReviewPanel title={t("admin.matchReview")} empty={!filteredMatches.length}>
+              {filteredMatches.map((request) => (
                 <ReviewItem
                   key={request.id}
                   title={resourceTitle(request.resource, t)}
@@ -246,8 +307,8 @@ export default function AdminPage() {
           ) : null}
 
           {tab === "licenses" ? (
-            <ReviewPanel title={t("admin.licenseReview")} empty={!pendingLicenses.length}>
-              {pendingLicenses.map((application) => (
+            <ReviewPanel title={t("admin.licenseReview")} empty={!filteredLicenses.length}>
+              {filteredLicenses.map((application) => (
                 <ReviewItem
                   key={application.id}
                   title={readText(application.applicantName, application.applicantNameKey, t)}
@@ -270,8 +331,8 @@ export default function AdminPage() {
           ) : null}
 
           {tab === "verifications" ? (
-            <ReviewPanel title={t("admin.verificationReview")} empty={!pendingVerifications.length}>
-              {pendingVerifications.map((verification) => (
+            <ReviewPanel title={t("admin.verificationReview")} empty={!filteredVerifications.length}>
+              {filteredVerifications.map((verification) => (
                 <ReviewItem
                   key={verification.id}
                   title={verification.userName ?? verification.userId}
@@ -295,7 +356,7 @@ export default function AdminPage() {
           {tab === "users" ? (
             <section className="panel mt-6 overflow-hidden">
               <SectionTitle title={t("admin.userManagement")} />
-              {users.map((user) => (
+              {filteredUsers.length ? filteredUsers.map((user) => (
                 <div key={user.id} className="grid gap-3 border-t border-slate-100 p-4 text-sm lg:grid-cols-[1.4fr_1fr_1fr_1.2fr_220px] lg:items-center">
                   <b>{user.name ?? user.email}</b>
                   <span className="text-slate-500">{user.email}</span>
@@ -306,14 +367,14 @@ export default function AdminPage() {
                     <ActionButton label={t("common.requestInfo")} tone="blue" onClick={() => runReview(adminUpdateUserVerifyStatus(user.id, "needs_more_info", noteFor(user.id)), t("common.needsMoreInfo"))} />
                   </div>
                 </div>
-              ))}
+              )) : <EmptyState />}
             </section>
           ) : null}
 
           {tab === "audit" ? (
             <section className="panel mt-6 overflow-hidden">
               <SectionTitle title={t("admin.auditLog")} />
-              {auditLogs.length ? auditLogs.map((log) => <AuditRow key={log.id} log={log} />) : <EmptyState />}
+              {filteredAuditLogs.length ? filteredAuditLogs.map((log) => <AuditRow key={log.id} log={log} />) : <EmptyState />}
             </section>
           ) : null}
         </main>

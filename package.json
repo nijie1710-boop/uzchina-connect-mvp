@@ -12,7 +12,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
-    "db:seed": "node prisma/seed.mjs"
+    "db:seed": "node prisma/seed.mjs",
+    "backup:postgres": "bash scripts/backup-postgres.sh",
+    "restore:postgres": "bash scripts/restore-postgres.sh",
+    "deploy:production": "bash scripts/deploy-production.sh"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"

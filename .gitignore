@@ -5,6 +5,8 @@ build/
 coverage/
 playwright-report/
 test-results/
+/backups/
+/uploads/
 .tmp/
 .env
 .env*.local

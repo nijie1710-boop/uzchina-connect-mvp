@@ -205,6 +205,8 @@ const zhCN = {
   admin: {
     title: "管理员后台",
     subtitle: "审核资源、需求、许可证合作与对接申请，所有操作写入审核记录。",
+    loading: "正在验证管理员权限...",
+    searchPlaceholder: "搜索标题、用户、状态、备注",
     overview: "数据看板",
     resourceReview: "资源审核",
     demandReview: "需求审核",
@@ -536,6 +538,8 @@ const en = {
   admin: {
     title: "Admin",
     subtitle: "Review resources, needs, license applications, and connection requests. Every action is written to audit logs.",
+    loading: "Checking admin access...",
+    searchPlaceholder: "Search title, user, status, or note",
     overview: "Dashboard",
     resourceReview: "Resource review",
     demandReview: "Need review",

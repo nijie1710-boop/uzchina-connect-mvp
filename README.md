@@ -81,6 +81,8 @@ DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/uzchina_connect?schema=p
 SESSION_SECRET="replace-with-a-long-random-secret"
 NEXT_PUBLIC_DEFAULT_LOCALE="zh-CN"
 NEXT_PUBLIC_SITE_URL="http://127.0.0.1:3000"
+AUTH_COOKIE_SECURE="false"
+ENABLE_HSTS="false"
 ```
 
 本机如果使用 macOS 默认 PostgreSQL 用户，可以类似：
@@ -238,6 +240,8 @@ DATABASE_URL="postgresql://uzchina_app:replace-with-strong-db-password@localhost
 SESSION_SECRET="replace-with-a-long-random-secret"
 NEXT_PUBLIC_DEFAULT_LOCALE="zh-CN"
 NEXT_PUBLIC_SITE_URL="https://your-domain.com"
+AUTH_COOKIE_SECURE="true"
+ENABLE_HSTS="true"
 ```
 
 生成强随机 `SESSION_SECRET`：
@@ -257,6 +261,17 @@ pnpm build
 ```
 
 说明：MVP 初次部署可以执行 `pnpm prisma db seed` 创建管理员账号和演示数据。正式上线后，如果不希望重置/覆盖数据，不要在已有生产数据的环境重复执行 seed。
+
+Cookie 和 HTTPS 策略：
+
+- 正式域名启用 HTTPS 后，`AUTH_COOKIE_SECURE="true"`，`ENABLE_HSTS="true"`。
+- 只有临时用 `http://IP:PORT` 测试时才设置 `AUTH_COOKIE_SECURE="false"`，否则浏览器不会在 HTTP 下保存 secure cookie。
+- 切换为正式域名后，重新构建并重启 PM2：
+
+```bash
+pnpm build
+pm2 restart uzchina-connect --update-env
+```
 
 ### 5. PM2 启动和开机自启
 
@@ -348,34 +363,102 @@ sudo tail -f /var/log/nginx/error.log
 
 ```bash
 cd /var/www/uzchina-connect-mvp
-git pull
-pnpm install --frozen-lockfile
-pnpm prisma migrate deploy
-pnpm build
-pm2 restart uzchina-connect
+APP_DIR=/var/www/uzchina-connect-mvp PM2_APP_NAME=uzchina-connect pnpm deploy:production
 ```
 
 ### 9. 数据库备份和恢复
 
-创建备份目录：
+仓库提供了可复用备份和恢复脚本：
 
 ```bash
-mkdir -p ~/backups/uzchina-connect
+pnpm backup:postgres
+CONFIRM_RESTORE=yes pnpm restore:postgres /path/to/backup.dump
 ```
 
-备份：
+生产建议把备份放到系统目录，并保留 14 天：
 
 ```bash
-pg_dump -h localhost -U uzchina_app -Fc uzchina_connect_prod > ~/backups/uzchina-connect/uzchina_$(date +%F_%H%M).dump
+sudo mkdir -p /var/backups/uzchina-connect
+sudo chown -R $USER:$USER /var/backups/uzchina-connect
+BACKUP_DIR=/var/backups/uzchina-connect BACKUP_RETENTION_DAYS=14 pnpm backup:postgres
 ```
 
-恢复到空库：
+配置每日自动备份：
 
 ```bash
-pg_restore -h localhost -U uzchina_app -d uzchina_connect_prod --clean --if-exists ~/backups/uzchina-connect/backup-file.dump
+sudo tee /etc/cron.d/uzchina-connect-backup >/dev/null <<'EOF'
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+15 3 * * * root APP_DIR=/var/www/uzchina-connect-mvp BACKUP_DIR=/var/backups/uzchina-connect BACKUP_RETENTION_DAYS=14 /var/www/uzchina-connect-mvp/scripts/backup-postgres.sh >> /var/log/uzchina-connect-backup.log 2>&1
+EOF
+sudo chmod 644 /etc/cron.d/uzchina-connect-backup
+sudo systemctl restart cron
 ```
 
-### 10. 回滚说明
+检查备份日志：
+
+```bash
+sudo tail -f /var/log/uzchina-connect-backup.log
+```
+
+恢复前必须先确认：
+
+- 备份文件存在并通过 `.sha256` 校验。
+- 目标数据库正确，避免覆盖线上数据。
+- 已进入维护窗口，或先恢复到新库验证。
+
+恢复到当前 `.env` 的 `DATABASE_URL`：
+
+```bash
+CONFIRM_RESTORE=yes pnpm restore:postgres /var/backups/uzchina-connect/backup-file.dump
+```
+
+恢复到新库验证：
+
+```bash
+TARGET_DATABASE_URL="postgresql://uzchina_app:password@localhost:5432/uzchina_connect_restore?schema=public" \
+CONFIRM_RESTORE=yes \
+pnpm restore:postgres /var/backups/uzchina-connect/backup-file.dump
+```
+
+### 10. 健康检查、日志轮转和监控
+
+健康检查：
+
+```bash
+curl -fsS https://your-domain.com/api/health
+```
+
+返回 `ok: true` 且 `database: "ok"` 表示应用和数据库都可用。可以接入 Uptime Kuma、Better Stack、Vultr 监控或其他外部探测服务。
+
+PM2 日志轮转：
+
+```bash
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 100M
+pm2 set pm2-logrotate:retain 10
+pm2 set pm2-logrotate:compress true
+pm2 save
+```
+
+建议监控项：
+
+- `/api/health` 每 1-5 分钟探测一次。
+- PM2 进程 `uzchina-connect` 是否 online。
+- PostgreSQL 服务是否 active。
+- 磁盘容量，尤其是 `/var/backups/uzchina-connect`。
+- Nginx 5xx 错误数量。
+
+### 11. 上传文件策略
+
+数据库已包含 `UploadFile`，当前新增 `/api/uploads` 用于登记上传文件元数据。生产环境不建议把认证资料、许可证材料直接写入服务器磁盘，建议使用对象存储：
+
+- Vultr Object Storage、S3、Cloudflare R2 或同类服务。
+- 前端先上传到对象存储，再把 HTTPS 文件 URL、文件名、大小、归属对象写入 `/api/uploads`。
+- `/api/uploads` 会校验登录状态、目标归属权，生产环境要求 `fileUrl` 使用 HTTPS。
+- 文件权限建议默认为私有，通过短期签名 URL 或后台审核后再开放。
+
+### 12. 回滚说明
 
 代码回滚：
 
@@ -399,8 +482,11 @@ pm2 restart uzchina-connect
 - 初次部署需要 seed 时，`pnpm prisma db seed` 成功。
 - `pnpm build` 成功。
 - PM2 进程 `uzchina-connect` 正常。
+- `/api/health` 返回 `ok: true`。
+- 自动备份 cron 已创建，并至少手工跑过一次 `pnpm backup:postgres`。
 - Nginx 反向代理正常。
 - HTTPS 证书正常。
+- `AUTH_COOKIE_SECURE="true"` 和 `ENABLE_HSTS="true"` 已在 HTTPS 域名下启用。
 - admin 账号可以登录。
 - 普通用户可以注册/登录。
 - 发布资源 → 后台审核 → 资源大厅展示 → 申请对接 → 后台开放联系方式完整闭环正常。

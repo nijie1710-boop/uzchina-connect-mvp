@@ -4,16 +4,29 @@ import { prisma } from "./prisma";
 
 export const SESSION_COOKIE = "uzc_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 14;
-const SESSION_SECRET =
-  process.env.SESSION_SECRET ?? "uzchina-connect-local-dev-secret-change-before-production";
+const DEFAULT_SESSION_SECRET = "uzchina-connect-local-dev-secret-change-before-production";
 
 type SessionPayload = {
   userId: string;
   exp: number;
 };
 
+function getSessionSecret() {
+  const secret = process.env.SESSION_SECRET ?? DEFAULT_SESSION_SECRET;
+  if (process.env.NODE_ENV === "production" && secret === DEFAULT_SESSION_SECRET) {
+    throw new Error("SESSION_SECRET is required in production.");
+  }
+  return secret;
+}
+
+function shouldUseSecureCookie() {
+  if (process.env.AUTH_COOKIE_SECURE === "true") return true;
+  if (process.env.AUTH_COOKIE_SECURE === "false") return false;
+  return process.env.NODE_ENV === "production";
+}
+
 function sign(payload: string) {
-  return createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
+  return createHmac("sha256", getSessionSecret()).update(payload).digest("base64url");
 }
 
 function encodeSession(userId: string) {
@@ -52,8 +65,8 @@ export async function setSessionCookie(userId: string) {
     httpOnly: true,
     maxAge: SESSION_MAX_AGE,
     path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
+    sameSite: "strict",
+    secure: shouldUseSecureCookie()
   });
 }
 
