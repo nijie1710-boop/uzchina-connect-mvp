@@ -100,6 +100,7 @@ model User {
   adminAuditLogs              AdminAuditLog[]      @relation("AuditAdmin")
   reviewedMatchRequests       MatchRequest[]       @relation("MatchReviewer")
   reviewedVerifications       Verification[]       @relation("VerificationReviewer")
+  matchFollowUps              MatchFollowUp[]      @relation("MatchFollowUpAuthor")
 
   @@index([role])
   @@index([verifyStatus])
@@ -190,11 +191,28 @@ model MatchRequest {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
+  followUps MatchFollowUp[]
+
   @@unique([resourceId, requesterId])
   @@index([status])
   @@index([resourceId])
   @@index([requesterId])
   @@index([reviewedBy])
+  @@index([createdAt])
+}
+
+model MatchFollowUp {
+  id             String       @id @default(cuid())
+  matchRequestId String
+  matchRequest   MatchRequest @relation(fields: [matchRequestId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User         @relation("MatchFollowUpAuthor", fields: [authorId], references: [id])
+  note           String
+  nextStep       String?
+  createdAt      DateTime     @default(now())
+
+  @@index([matchRequestId])
+  @@index([authorId])
   @@index([createdAt])
 }
 

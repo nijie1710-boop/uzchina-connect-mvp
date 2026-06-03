@@ -60,11 +60,26 @@ export async function getPendingDemands() {
 export async function getPendingMatchRequests() {
   await requireAdmin();
   const requests = await prisma.matchRequest.findMany({
-    where: { status: { in: [MatchRequestStatus.PENDING, MatchRequestStatus.APPROVED] } },
+    where: { status: { in: [MatchRequestStatus.PENDING, MatchRequestStatus.APPROVED, MatchRequestStatus.CONTACT_UNLOCKED] } },
     include: {
-      requester: { select: { id: true, name: true, email: true, companyName: true } },
+      requester: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          telegram: true,
+          whatsapp: true,
+          wechat: true,
+          companyName: true
+        }
+      },
       resource: {
         include: { user: { select: { id: true, name: true, email: true, companyName: true } } }
+      },
+      followUps: {
+        include: { author: { select: { id: true, name: true, email: true, companyName: true } } },
+        orderBy: { createdAt: "desc" }
       }
     },
     orderBy: { createdAt: "desc" }

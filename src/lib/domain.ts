@@ -17,6 +17,15 @@ export type ContactProfile = {
   wechat?: string;
 };
 
+export type MatchFollowUpRecord = {
+  id: string;
+  matchRequestId: string;
+  authorName: string;
+  note: string;
+  nextStep?: string;
+  createdAt: string;
+};
+
 export type LocalizedRecord = {
   titleKey?: string;
   title?: string;
@@ -74,7 +83,11 @@ export type MatchRequestRecord = {
   intent: string;
   status: MatchRequestStatus;
   adminNote?: string;
+  applicantContact?: ContactProfile;
   resourceTitle?: string;
+  reviewedAt?: string;
+  contactUnlockedAt?: string;
+  followUps?: MatchFollowUpRecord[];
   createdAt: string;
 };
 

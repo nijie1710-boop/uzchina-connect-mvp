@@ -3,6 +3,7 @@ import type {
   AdminUserRecord,
   DemandRecord,
   LicenseApplicationRecord,
+  MatchFollowUpRecord,
   MatchRequestRecord,
   ResourceRecord,
   SubmissionStatus,
@@ -79,6 +80,18 @@ type DbMatchRequest = {
   message: string;
   status: string;
   adminNote?: string | null;
+  contactUnlockedAt?: Date | null;
+  reviewedAt?: Date | null;
+  followUps?: DbMatchFollowUp[];
+  createdAt: Date;
+};
+
+type DbMatchFollowUp = {
+  id: string;
+  matchRequestId: string;
+  author?: DbUserBrief;
+  note: string;
+  nextStep: string | null;
   createdAt: Date;
 };
 
@@ -221,11 +234,34 @@ export function mapMatchRequest(request: DbMatchRequest): MatchRequestRecord {
     resourceId: request.resourceId,
     applicantId: request.requesterId,
     applicantName: ownerName(request.requester),
+    applicantContact: request.requester
+      ? {
+          phone: request.requester.phone ?? undefined,
+          email: request.requester.email,
+          telegram: request.requester.telegram ?? undefined,
+          whatsapp: request.requester.whatsapp ?? undefined,
+          wechat: request.requester.wechat ?? undefined
+        }
+      : undefined,
     intent: request.message,
     status: enumToValue(request.status) as MatchRequestRecord["status"],
     adminNote: request.adminNote ?? undefined,
     resourceTitle: request.resource?.title,
+    reviewedAt: request.reviewedAt?.toISOString(),
+    contactUnlockedAt: request.contactUnlockedAt?.toISOString(),
+    followUps: request.followUps?.map(mapMatchFollowUp),
     createdAt: request.createdAt.toISOString()
+  };
+}
+
+export function mapMatchFollowUp(followUp: DbMatchFollowUp): MatchFollowUpRecord {
+  return {
+    id: followUp.id,
+    matchRequestId: followUp.matchRequestId,
+    authorName: ownerName(followUp.author) || "Admin",
+    note: followUp.note,
+    nextStep: followUp.nextStep ?? undefined,
+    createdAt: followUp.createdAt.toISOString()
   };
 }
 

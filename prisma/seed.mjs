@@ -45,6 +45,7 @@ async function main() {
   await prisma.uploadFile.deleteMany();
   await prisma.verification.deleteMany();
   await prisma.licenseApplication.deleteMany();
+  await prisma.matchFollowUp.deleteMany();
   await prisma.matchRequest.deleteMany();
   await prisma.demand.deleteMany();
   await prisma.resource.deleteMany();
@@ -412,6 +413,22 @@ async function main() {
       }
     ]
   });
+
+  const approvedMatch = await prisma.matchRequest.findUnique({
+    where: { resourceId_requesterId: { resourceId: approvedResources[1].id, requesterId: serviceProvider.id } },
+    select: { id: true }
+  });
+
+  if (approvedMatch) {
+    await prisma.matchFollowUp.create({
+      data: {
+        matchRequestId: approvedMatch.id,
+        authorId: admin.id,
+        note: "已核对申请人资料，建议确认双方合作范围后开放联系方式。",
+        nextStep: "电话确认申请人仓配能力"
+      }
+    });
+  }
 
   await prisma.verification.createMany({
     data: [

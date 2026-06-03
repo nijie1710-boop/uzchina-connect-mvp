@@ -118,3 +118,47 @@ export async function adminReviewMatchRequest(
 export async function unlockContactForMatchRequest(id: string, note?: string) {
   return adminReviewMatchRequest(id, "contact_unlocked", note);
 }
+
+export async function addMatchFollowUp(
+  id: string,
+  note: string,
+  nextStep?: string
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const admin = await requireAdmin();
+    const normalizedNote = note.trim();
+    const normalizedNextStep = nextStep?.trim() || null;
+    if (!normalizedNote) throw new Error("请填写跟进记录。");
+
+    const request = await prisma.matchRequest.findUnique({
+      where: { id },
+      select: { id: true, resourceId: true }
+    });
+    if (!request) throw new Error("对接申请不存在。");
+
+    const followUp = await prisma.matchFollowUp.create({
+      data: {
+        matchRequestId: id,
+        authorId: admin.id,
+        note: normalizedNote,
+        nextStep: normalizedNextStep
+      },
+      select: { id: true }
+    });
+
+    await writeAuditLog({
+      adminId: admin.id,
+      targetType: AuditTargetType.MATCH_REQUEST,
+      targetId: id,
+      action: "match_follow_up:create",
+      note: normalizedNextStep ? `${normalizedNote} / ${normalizedNextStep}` : normalizedNote
+    });
+
+    revalidatePath(`/resources/${request.resourceId}`);
+    revalidatePath("/admin");
+    revalidatePath("/dashboard");
+    return { ok: true, data: followUp };
+  } catch (error) {
+    return actionError(error);
+  }
+}

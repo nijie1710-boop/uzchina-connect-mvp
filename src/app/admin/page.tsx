@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Check, FileClock, FileText, Handshake, LayoutDashboard, Search, ShieldAlert, ShieldCheck, Star, Users, X } from "lucide-react";
+import { Check, Eye, FileClock, FileText, Handshake, LayoutDashboard, Plus, Search, ShieldAlert, ShieldCheck, Star, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useI18n } from "@/i18n/provider";
 import {
@@ -22,7 +22,7 @@ import { useToast } from "@/components/toast-provider";
 import { adminUpdateUserVerifyStatus } from "@/actions/admin";
 import { adminReviewDemand } from "@/actions/demands";
 import { adminReviewLicenseApplication } from "@/actions/licenses";
-import { adminReviewMatchRequest } from "@/actions/matches";
+import { addMatchFollowUp, adminReviewMatchRequest } from "@/actions/matches";
 import { adminReviewResource } from "@/actions/resources";
 import { adminReviewVerification } from "@/actions/verifications";
 
@@ -75,6 +75,9 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [followUpNote, setFollowUpNote] = useState("");
+  const [followUpNextStep, setFollowUpNextStep] = useState("");
   const [query, setQuery] = useState("");
   const [pageByTab, setPageByTab] = useState<Record<AdminTab, number>>(initialPages);
   const normalizedQuery = query.trim().toLowerCase();
@@ -114,6 +117,25 @@ export default function AdminPage() {
     const resolved = await result;
     showToast(resolved.ok ? successText : (resolved.error ?? "Failed"));
     await loadAdmin();
+  };
+
+  const selectedMatch = selectedMatchId ? (pendingMatches.find((request) => request.id === selectedMatchId) ?? null) : null;
+
+  const openMatchDetail = (request: AdminMatchRequest) => {
+    setSelectedMatchId(request.id);
+    setFollowUpNote("");
+    setFollowUpNextStep("");
+  };
+
+  const saveMatchFollowUp = async () => {
+    if (!selectedMatch) return;
+    const result = await addMatchFollowUp(selectedMatch.id, followUpNote, followUpNextStep);
+    showToast(result.ok ? t("admin.followUpSaved") : (result.error ?? "Failed"));
+    if (result.ok) {
+      setFollowUpNote("");
+      setFollowUpNextStep("");
+      await loadAdmin();
+    }
   };
 
   if (!stats) {
@@ -336,6 +358,7 @@ export default function AdminPage() {
                   onNote={(value) => setNote(request.id, value)}
                   actions={
                     <>
+                      <ActionButton label={t("admin.viewDetail")} tone="blue" onClick={() => openMatchDetail(request)} icon={<Eye className="h-3.5 w-3.5" />} />
                       <ActionButton label={t("common.approve")} tone="green" onClick={() => runReview(adminReviewMatchRequest(request.id, "approved", noteFor(request.id)), t("common.approved"))} />
                       <ActionButton label={t("admin.openContact")} tone="green" onClick={() => runReview(adminReviewMatchRequest(request.id, "contact_unlocked", noteFor(request.id)), t("detail.contactUnlocked"))} />
                       <ActionButton label={t("common.reject")} tone="red" onClick={() => runReview(adminReviewMatchRequest(request.id, "rejected", noteFor(request.id)), t("common.rejected"))} />
@@ -422,10 +445,217 @@ export default function AdminPage() {
               <PageControls total={filteredAuditLogs.length} page={auditPage} pageSize={ADMIN_PAGE_SIZE} onPage={(next) => setPage("audit", next)} />
             </section>
           ) : null}
+
+          {selectedMatch ? (
+            <MatchDetailModal
+              request={selectedMatch}
+              note={notes[selectedMatch.id] ?? ""}
+              followUpNote={followUpNote}
+              followUpNextStep={followUpNextStep}
+              onNote={(value) => setNote(selectedMatch.id, value)}
+              onFollowUpNote={setFollowUpNote}
+              onFollowUpNextStep={setFollowUpNextStep}
+              onAddFollowUp={() => void saveMatchFollowUp()}
+              onClose={() => setSelectedMatchId(null)}
+              onApprove={() => void runReview(adminReviewMatchRequest(selectedMatch.id, "approved", noteFor(selectedMatch.id)), t("common.approved"))}
+              onUnlock={() => void runReview(adminReviewMatchRequest(selectedMatch.id, "contact_unlocked", noteFor(selectedMatch.id)), t("detail.contactUnlocked"))}
+              onReject={() => void runReview(adminReviewMatchRequest(selectedMatch.id, "rejected", noteFor(selectedMatch.id)), t("common.rejected"))}
+            />
+          ) : null}
         </main>
       </div>
     </div>
   );
+}
+
+function MatchDetailModal({
+  request,
+  note,
+  followUpNote,
+  followUpNextStep,
+  onNote,
+  onFollowUpNote,
+  onFollowUpNextStep,
+  onAddFollowUp,
+  onClose,
+  onApprove,
+  onUnlock,
+  onReject
+}: {
+  request: AdminMatchRequest;
+  note: string;
+  followUpNote: string;
+  followUpNextStep: string;
+  onNote: (value: string) => void;
+  onFollowUpNote: (value: string) => void;
+  onFollowUpNextStep: (value: string) => void;
+  onAddFollowUp: () => void;
+  onClose: () => void;
+  onApprove: () => void;
+  onUnlock: () => void;
+  onReject: () => void;
+}) {
+  const { t } = useI18n();
+  const canAddFollowUp = followUpNote.trim().length > 0;
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4">
+      <section className="w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{t("admin.matchDetail")}</p>
+            <h2 className="mt-1 text-lg font-black text-navy">{resourceTitle(request.resource, t)}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-slate-100 px-3 text-xs font-black text-slate-600 hover:bg-slate-200"
+          >
+            <X className="h-3.5 w-3.5" />
+            {t("common.close")}
+          </button>
+        </div>
+
+        <div className="max-h-[calc(100dvh-130px)] overflow-y-auto p-5">
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="grid gap-4">
+              <div className="rounded-2xl border border-line p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="font-black text-navy">{t("admin.applicant")}</h3>
+                  <StatusBadge status={request.status} t={t} />
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <DetailField label={t("admin.applicant")} value={readText(request.applicantName, request.applicantNameKey, t)} />
+                  <DetailField label={t("dashboard.statusColumn")} value={<StatusBadge status={request.status} t={t} />} />
+                  <DetailField label={t("admin.createdAt")} value={formatDate(request.createdAt)} />
+                  <DetailField label={t("admin.reviewedAt")} value={formatDate(request.reviewedAt)} />
+                  <DetailField label={t("admin.contactUnlockedAt")} value={formatDate(request.contactUnlockedAt)} />
+                </div>
+                <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-black text-slate-400">{t("admin.intent")}</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{request.intent}</p>
+                </div>
+                {request.adminNote ? (
+                  <div className="mt-3 rounded-2xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+                    <b>{t("admin.note")}：</b>{request.adminNote}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-line p-4">
+                <h3 className="font-black text-navy">{t("admin.followUp")}</h3>
+                <div className="mt-4 grid gap-3">
+                  <textarea
+                    value={followUpNote}
+                    onChange={(event) => onFollowUpNote(event.target.value)}
+                    placeholder={t("admin.followUpNotePlaceholder")}
+                    className="field min-h-24 resize-none py-3 text-sm"
+                  />
+                  <input
+                    value={followUpNextStep}
+                    onChange={(event) => onFollowUpNextStep(event.target.value)}
+                    placeholder={t("admin.nextStepPlaceholder")}
+                    className="field text-sm"
+                  />
+                  <button
+                    type="button"
+                    disabled={!canAddFollowUp}
+                    onClick={onAddFollowUp}
+                    className="inline-flex h-10 w-fit items-center gap-2 rounded-xl bg-navy px-4 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t("admin.addFollowUp")}
+                  </button>
+                </div>
+
+                <div className="mt-5 grid gap-3">
+                  {request.followUps?.length ? (
+                    request.followUps.map((followUp) => (
+                      <div key={followUp.id} className="rounded-2xl bg-slate-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <b className="text-sm text-slate-800">{followUp.authorName}</b>
+                          <span className="text-xs font-semibold text-slate-400">{formatDate(followUp.createdAt)}</span>
+                        </div>
+                        <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{followUp.note}</p>
+                        {followUp.nextStep ? (
+                          <p className="mt-2 text-xs font-black text-teal-700">{t("admin.nextStep")}：{followUp.nextStep}</p>
+                        ) : null}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">{t("admin.noFollowUps")}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <aside className="grid gap-4">
+              <ContactBlock title={t("admin.applicantContact")} contact={request.applicantContact} />
+              <ContactBlock title={t("admin.resourceContact")} contact={request.resource.contact} />
+
+              <div className="rounded-2xl border border-line p-4">
+                <h3 className="font-black text-navy">{t("admin.note")}</h3>
+                <textarea
+                  value={note}
+                  onChange={(event) => onNote(event.target.value)}
+                  placeholder={t("admin.notePlaceholder")}
+                  className="field mt-3 min-h-28 resize-none py-3 text-sm"
+                />
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <ActionButton label={t("common.approve")} tone="green" onClick={onApprove} />
+                  <ActionButton label={t("admin.openContact")} tone="green" onClick={onUnlock} />
+                  <ActionButton label={t("common.reject")} tone="red" onClick={onReject} />
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ContactBlock({ title, contact }: { title: string; contact?: ResourceRecord["contact"] }) {
+  const { t } = useI18n();
+  const contactRows: Array<[string, string | undefined]> = [
+    [t("forms.email"), contact?.email],
+    [t("forms.phone"), contact?.phone],
+    [t("forms.telegram"), contact?.telegram],
+    [t("forms.whatsapp"), contact?.whatsapp],
+    [t("forms.wechat"), contact?.wechat]
+  ];
+  const rows = contactRows.filter((row): row is [string, string] => Boolean(row[1]));
+
+  return (
+    <div className="rounded-2xl border border-line p-4">
+      <h3 className="font-black text-navy">{title}</h3>
+      <div className="mt-4 grid gap-2">
+        {rows.length ? (
+          rows.map(([label, value]) => (
+            <div key={label} className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm">
+              <span className="font-black text-slate-500">{label}</span>
+              <span className="break-all text-right font-semibold text-slate-800">{value}</span>
+            </div>
+          ))
+        ) : (
+          <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">-</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailField({ label, value }: { label: string; value?: React.ReactNode }) {
+  return (
+    <div className="rounded-xl bg-slate-50 px-3 py-2">
+      <p className="text-xs font-black text-slate-400">{label}</p>
+      <div className="mt-1 text-sm font-semibold text-slate-800">{value || "-"}</div>
+    </div>
+  );
+}
+
+function formatDate(value?: string) {
+  return value ? new Date(value).toLocaleString() : "-";
 }
 
 function StatsGrid({ stats }: { stats: AdminStats }) {
@@ -581,7 +811,7 @@ function ActionButton({
   }[tone];
 
   return (
-    <button onClick={onClick} className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-black ${toneClass}`}>
+    <button type="button" onClick={onClick} className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-black ${toneClass}`}>
       {icon ?? (tone === "red" ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />)}
       {label}
     </button>
