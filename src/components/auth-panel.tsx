@@ -57,7 +57,8 @@ export function LoginForm() {
       return;
     }
     showToast(t("toast.loggedIn"));
-    router.push("/dashboard");
+    router.replace("/dashboard");
+    router.refresh();
   };
 
   return (
@@ -112,7 +113,8 @@ export function RegisterForm() {
       return;
     }
     showToast(t("toast.registered"));
-    router.push("/dashboard");
+    router.replace("/dashboard");
+    router.refresh();
   };
 
   return (

@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { prisma } from "./prisma";
 
 export const SESSION_COOKIE = "uzc_session";
@@ -19,9 +19,38 @@ function getSessionSecret() {
   return secret;
 }
 
-function shouldUseSecureCookie() {
+function isLocalOrIpHost(host: string) {
+  const hostname = host.startsWith("[") ? host.slice(1, host.indexOf("]")) : (host.split(":")[0] ?? "");
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    /^10\./.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname) ||
+    /^192\.168\./.test(hostname) ||
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)
+  );
+}
+
+async function shouldUseSecureCookie() {
   if (process.env.AUTH_COOKIE_SECURE === "true") return true;
   if (process.env.AUTH_COOKIE_SECURE === "false") return false;
+
+  const headerStore = await headers();
+  const forwardedProto = headerStore.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (forwardedProto) return forwardedProto === "https";
+
+  const host = headerStore.get("host") ?? "";
+  if (isLocalOrIpHost(host)) return false;
+
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    try {
+      return new URL(process.env.NEXT_PUBLIC_SITE_URL).protocol === "https:";
+    } catch {
+      return process.env.NODE_ENV === "production";
+    }
+  }
+
   return process.env.NODE_ENV === "production";
 }
 
@@ -66,7 +95,7 @@ export async function setSessionCookie(userId: string) {
     maxAge: SESSION_MAX_AGE,
     path: "/",
     sameSite: "strict",
-    secure: shouldUseSecureCookie()
+    secure: await shouldUseSecureCookie()
   });
 }
 
