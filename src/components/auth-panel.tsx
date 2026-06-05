@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Mail, MessageCircle, Phone, ShieldCheck } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { login, register } from "@/actions/auth";
@@ -43,7 +42,6 @@ export function AuthVisual({ mode }: { mode: "login" | "register" }) {
 export function LoginForm() {
   const { t } = useI18n();
   const { showToast } = useToast();
-  const router = useRouter();
   const [email, setEmail] = useState("demo@uzchina-connect.com");
   const [password, setPassword] = useState("demo123456");
   const [pending, setPending] = useState(false);
@@ -57,8 +55,7 @@ export function LoginForm() {
       return;
     }
     showToast(t("toast.loggedIn"));
-    router.replace("/dashboard");
-    router.refresh();
+    window.location.replace("/dashboard");
   };
 
   return (
@@ -96,7 +93,6 @@ export function LoginForm() {
 export function RegisterForm() {
   const { t } = useI18n();
   const { showToast } = useToast();
-  const router = useRouter();
   const [email, setEmail] = useState("new-user@uzchina-connect.com");
   const [phone, setPhone] = useState("+998 90 000 0000");
   const [messaging, setMessaging] = useState("@new_user");
@@ -113,8 +109,7 @@ export function RegisterForm() {
       return;
     }
     showToast(t("toast.registered"));
-    router.replace("/dashboard");
-    router.refresh();
+    window.location.replace("/dashboard");
   };
 
   return (
